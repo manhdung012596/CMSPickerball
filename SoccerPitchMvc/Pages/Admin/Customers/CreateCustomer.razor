@@ -1,0 +1,74 @@
+@page "/admin/customers/create"
+@layout AdminLayout
+@inject SoccerPitchMvc.Services.ICustomerService CustomerService
+@inject SoccerPitchMvc.Services.ToastService ToastService
+@inject NavigationManager NavigationManager
+
+<div class="container-fluid mt-4" style="max-width: 700px;">
+    <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-header bg-success text-white py-3">
+            <h4 class="fw-bold mb-0"><i class="bi bi-person-plus-fill"></i> Thêm Khách Hàng Mới</h4>
+        </div>
+        <div class="card-body p-4">
+            <EditForm Model="@newCustomer" OnValidSubmit="HandleSubmit">
+                <DataAnnotationsValidator />
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-dark">Họ và Tên <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control form-control-lg" @bind-value="newCustomer.FullName" placeholder="Nhập họ và tên..." />
+                    <div class="text-danger small mt-1">
+                        <ValidationMessage For="@(() => newCustomer.FullName)" />
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-dark">Số Điện Thoại <span class="text-danger">*</span></label>
+                    <input type="tel" class="form-control form-control-lg" @bind-value="newCustomer.PhoneNumber" placeholder="Nhập số điện thoại..." />
+                    <div class="text-danger small mt-1">
+                        <ValidationMessage For="@(() => newCustomer.PhoneNumber)" />
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-dark">Địa Chỉ</label>
+                    <textarea class="form-control" rows="3" @bind="newCustomer.Address" placeholder="Nhập địa chỉ (tùy chọn)..."></textarea>
+                    <div class="text-danger small mt-1">
+                        <ValidationMessage For="@(() => newCustomer.Address)" />
+                    </div>
+                </div>
+
+                <div class="d-flex gap-3 justify-content-end">
+                    <button type="button" class="btn btn-lg btn-outline-secondary px-4" @onclick="BackToList">
+                        Quay lại
+                    </button>
+                    <button type="submit" class="btn btn-lg btn-success px-5 fw-semibold shadow-sm">
+                        Lưu thông tin
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    private CreateCustomerDto newCustomer = new();
+
+    private async Task HandleSubmit()
+    {
+        var success = await CustomerService.CreateCustomerAsync(newCustomer);
+        if (success)
+        {
+            ToastService.ShowSuccess($"Đã tạo thành công khách hàng '{newCustomer.FullName}'.");
+            NavigationManager.NavigateTo("admin/customers");
+        }
+        else
+        {
+            ToastService.ShowError("Số điện thoại này đã được sử dụng bởi khách hàng khác.");
+        }
+    }
+
+    private void BackToList()
+    {
+        NavigationManager.NavigateTo("admin/customers");
+    }
+}

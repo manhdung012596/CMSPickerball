@@ -1,0 +1,314 @@
+@page "/admin/promotions/offers"
+@layout AdminLayout
+@using SoccerPitchMvc.Models
+@using SoccerPitchMvc.Services
+@inject IPromotionService PromotionService
+@inject ToastService Toast
+@inject NavigationManager NavigationManager
+
+<PageTitle>Chương trình ưu đãi - Quản trị</PageTitle>
+
+<div class="page-header d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h1 class="page-title"><i class="fas fa-gift me-2 text-warning"></i>Chương trình Ưu đãi</h1>
+        <p class="text-muted mb-0">Các chương trình giảm giá tự động được áp dụng khi đặt sân đủ điều kiện</p>
+    </div>
+    <button class="btn btn-warning text-white" @onclick="GoToCreate">
+        <i class="fas fa-plus me-1"></i> Tạo chương trình ưu đãi
+    </button>
+</div>
+
+<!-- Stats Row -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-warning bg-opacity-10 p-3">
+                    <i class="fas fa-bullhorn fa-xl text-warning"></i>
+                </div>
+                <div>
+                    <div class="small text-muted fw-semibold text-uppercase">Tổng chương trình</div>
+                    <div class="fs-2 fw-bold">@Promotions.Count</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-success bg-opacity-10 p-3">
+                    <i class="fas fa-circle-check fa-xl text-success"></i>
+                </div>
+                <div>
+                    <div class="small text-muted fw-semibold text-uppercase">Đang diễn ra</div>
+                    <div class="fs-2 fw-bold text-success">@Promotions.Count(p => p.IsActive)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-info bg-opacity-10 p-3">
+                    <i class="fas fa-clock-rotate-left fa-xl text-info"></i>
+                </div>
+                <div>
+                    <div class="small text-muted fw-semibold text-uppercase">Sắp diễn ra</div>
+                    <div class="fs-2 fw-bold text-info">@Promotions.Count(p => p.IsScheduled && p.Status == 1)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-3">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-search"></i></span>
+                    <input type="text" class="form-control border-start-0"
+                           placeholder="Tìm kiếm chương trình ưu đãi..."
+                           @bind-value="SearchText" @bind-value:event="oninput" />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <select class="form-select" @bind="FilterStatus">
+                    <option value="all">Tất cả trạng thái</option>
+                    <option value="active">Đang hoạt động</option>
+                    <option value="draft">Bản nháp</option>
+                    <option value="expired">Đã kết thúc / Tạm dừng</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-outline-secondary w-100" @onclick="ResetFilters">
+                    <i class="fas fa-undo me-1"></i>Reset
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        @if (IsLoading)
+        {
+            <div class="text-center py-5">
+                <div class="spinner-border text-warning" role="status"></div>
+                <div class="mt-2 text-muted small">Đang tải dữ liệu...</div>
+            </div>
+        }
+        else if (!FilteredList.Any())
+        {
+            <div class="text-center py-5">
+                <i class="fas fa-gift fa-3x text-muted mb-3 d-block"></i>
+                <p class="text-muted mb-3">Chưa có chương trình ưu đãi nào được thiết lập.</p>
+                <button class="btn btn-warning text-white" @onclick="GoToCreate">
+                    <i class="fas fa-plus me-1"></i>Tạo ưu đãi mới
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="50">#</th>
+                            <th>Tên chương trình ưu đãi</th>
+                            <th>Mức giảm giá</th>
+                            <th>Điều kiện áp dụng</th>
+                            <th class="text-center">Thời gian diễn ra</th>
+                            <th class="text-center" width="200">Tiến độ</th>
+                            <th class="text-center">Trạng thái</th>
+                            <th width="110" class="text-center">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var (promo, idx) in FilteredList.Select((p, i) => (p, i + 1)))
+                        {
+                            <tr>
+                                <td class="text-muted small fw-semibold">@idx</td>
+                                <td>
+                                    <div class="fw-bold">@promo.Name</div>
+                                    @if (!string.IsNullOrEmpty(promo.Description))
+                                    {
+                                        <small class="text-muted text-truncate d-inline-block"
+                                               style="max-width:280px">@promo.Description</small>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-success">@promo.DiscountDisplay</span>
+                                    @if (promo.DiscountType == 1 && promo.MaxDiscountAmount.HasValue)
+                                    {
+                                        <div class="small text-muted">Tối đa @promo.MaxDiscountAmount.Value.ToString("N0")đ</div>
+                                    }
+                                </td>
+                                <td>
+                                    @if (promo.MinOrderAmount.HasValue && promo.MinOrderAmount.Value > 0)
+                                    {
+                                        <span class="small">Đơn từ <strong>@promo.MinOrderAmount.Value.ToString("N0")đ</strong></span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">Không giới hạn</span>
+                                    }
+                                </td>
+                                <td class="text-center small">
+                                    <div>@promo.StartDate.ToString("dd/MM/yyyy")</div>
+                                    <div class="text-muted">→ @promo.EndDate.ToString("dd/MM/yyyy")</div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="progress mb-1" style="height:6px;">
+                                        <div class="progress-bar @GetProgressColor(promo)"
+                                             style="width:@(Math.Min(GetProgressPct(promo), 100).ToString("F0"))%"></div>
+                                    </div>
+                                    <div class="small text-muted fw-semibold">@GetProgressLabel(promo)</div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-@promo.ComputedStatusBadge">@promo.ComputedStatusText</span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary" title="Sửa"
+                                                @onclick="() => EditPromo(promo.Id)">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger" title="Xóa"
+                                                @onclick="() => ConfirmDelete(promo)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer bg-light">
+                <span class="text-muted small">Hiển thị <strong>@FilteredList.Count</strong> chương trình ưu đãi</span>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Delete Modal -->
+@if (ShowDeleteModal && PromoToDelete != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Xác nhận xóa</h5>
+                    <button type="button" class="btn-close btn-close-white"
+                            @onclick="() => ShowDeleteModal = false"></button>
+                </div>
+                <div class="modal-body py-3">
+                    <p class="mb-1">Bạn có chắc muốn xóa chương trình ưu đãi:</p>
+                    <p class="fw-bold text-danger fs-5 mb-0">@PromoToDelete.Name</p>
+                    <p class="text-muted small mt-2 mb-0">
+                        <i class="fas fa-info-circle me-1"></i>Đơn hàng mới sẽ không còn được hưởng ưu đãi này.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary" @onclick="() => ShowDeleteModal = false">Hủy</button>
+                    <button class="btn btn-danger" @onclick="ExecuteDelete" disabled="@IsDeleting">
+                        @if (IsDeleting) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                        Xóa
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<PromotionListDto> Promotions = new();
+    private bool IsLoading = true;
+    private string SearchText = string.Empty;
+    private string FilterStatus = "all";
+    private bool ShowDeleteModal = false;
+    private bool IsDeleting = false;
+    private PromotionListDto? PromoToDelete;
+
+    protected override async Task OnInitializedAsync() => await LoadData();
+
+    private async Task LoadData()
+    {
+        IsLoading = true;
+        Promotions = await PromotionService.GetPromotionsAsync(isCoupon: false);
+        IsLoading = false;
+    }
+
+    private List<PromotionListDto> FilteredList
+    {
+        get
+        {
+            var q = Promotions.AsEnumerable();
+            if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                var txt = SearchText.Trim().ToLower();
+                q = q.Where(p => p.Name.ToLower().Contains(txt));
+            }
+            q = FilterStatus switch
+            {
+                "active"  => q.Where(p => p.IsActive),
+                "draft"   => q.Where(p => p.Status == 0),
+                "expired" => q.Where(p => !p.IsActive && p.Status != 0),
+                _         => q
+            };
+            return q.ToList();
+        }
+    }
+
+    private void ResetFilters() { SearchText = string.Empty; FilterStatus = "all"; }
+
+    private double GetProgressPct(PromotionListDto p)
+    {
+        var now = DateTime.Now;
+        if (now < p.StartDate) return 0;
+        if (now > p.EndDate) return 100;
+        var total = (p.EndDate - p.StartDate).TotalSeconds;
+        var elapsed = (now - p.StartDate).TotalSeconds;
+        return total > 0 ? elapsed / total * 100 : 100;
+    }
+
+    private string GetProgressColor(PromotionListDto p)
+    {
+        var now = DateTime.Now;
+        if (now < p.StartDate) return "bg-info";
+        if (now > p.EndDate) return "bg-secondary";
+        return "bg-success";
+    }
+
+    private string GetProgressLabel(PromotionListDto p)
+    {
+        var now = DateTime.Now;
+        if (now < p.StartDate) return "Sắp bắt đầu";
+        if (now > p.EndDate) return "Đã kết thúc";
+        var pct = GetProgressPct(p);
+        return $"Đang chạy ({pct:F0}%)";
+    }
+    private void GoToCreate() => NavigationManager.NavigateTo("/admin/promotions/create");
+    private void EditPromo(int id) => NavigationManager.NavigateTo($"/admin/promotions/edit/{id}");
+    private void ConfirmDelete(PromotionListDto promo) { PromoToDelete = promo; ShowDeleteModal = true; }
+
+    private async Task ExecuteDelete()
+    {
+        if (PromoToDelete == null) return;
+        IsDeleting = true;
+        try
+        {
+            if (await PromotionService.DeletePromotionAsync(PromoToDelete.Id))
+            {
+                Toast.ShowSuccess($"Đã xóa «{PromoToDelete.Name}» thành công.");
+                await LoadData();
+            }
+            else Toast.ShowError("Có lỗi xảy ra khi xóa.");
+        }
+        catch (Exception ex) { Toast.ShowError($"Lỗi: {ex.Message}"); }
+        finally { IsDeleting = false; ShowDeleteModal = false; PromoToDelete = null; }
+    }
+}

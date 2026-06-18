@@ -1,0 +1,720 @@
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = "Trang chủ";
+}
+
+@section Styles {
+    <style>
+        /* Hero Section */
+        .hero-section {
+            background-color: var(--dark-slate);
+            background-image: linear-gradient(180deg, var(--dark-slate) 0%, #090d16 100%);
+            padding: 100px 0 120px;
+            color: #ffffff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            bottom: -50px;
+            left: -50px;
+            width: 350px;
+            height: 350px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(132, 204, 22, 0.12) 0%, transparent 70%);
+            z-index: 0;
+        }
+
+        .hero-section::after {
+            content: '';
+            position: absolute;
+            top: -100px;
+            right: -100px;
+            width: 450px;
+            height: 450px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(132, 204, 22, 0.08) 0%, transparent 70%);
+            z-index: 0;
+        }
+
+        .hero-tagline {
+            font-size: 15px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--lime-bright);
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+
+        .hero-title {
+            font-size: 54px;
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: -1.5px;
+            margin-bottom: 25px;
+            background: linear-gradient(135deg, #ffffff 60%, #e2e8f0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-title span {
+            background: linear-gradient(135deg, var(--lime-bright) 0%, #76b813 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        .hero-desc {
+            font-size: 18px;
+            color: #94a3b8;
+            margin-bottom: 40px;
+            line-height: 1.7;
+            max-width: 600px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn-secondary-custom {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: #ffffff;
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+            padding: 12px 30px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: var(--transition-smooth);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-secondary-custom:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--lime-bright);
+            border-color: var(--lime-bright);
+        }
+
+        /* Hero Image with Curved Loops */
+        .hero-image-container {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .hero-img {
+            width: 100%;
+            border-radius: 30px;
+            border: 6px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-image-container::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: -20px;
+            right: -20px;
+            bottom: -20px;
+            border-radius: 36px;
+            border: 2.5px solid var(--lime-green);
+            z-index: 1;
+            clip-path: polygon(0 0, 100% 0, 100% 70%, 0 100%);
+            transform: rotate(-3deg);
+        }
+
+        .hero-image-container::after {
+            content: '';
+            position: absolute;
+            top: -30px;
+            left: -30px;
+            right: -30px;
+            bottom: -30px;
+            border-radius: 40px;
+            border: 1.5px dashed var(--lime-green);
+            z-index: 0;
+            opacity: 0.5;
+            transform: rotate(5deg);
+        }
+
+        /* Stats Banner Grid */
+        .stats-banner-wrapper {
+            margin-top: -60px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .stats-banner {
+            background-color: #ffffff;
+            border-radius: 24px;
+            padding: 30px 40px;
+            box-shadow: 0 15px 40px rgba(15, 23, 42, 0.08);
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-card {
+            text-align: center;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .stat-card:last-child {
+            border-right: none;
+        }
+
+        .stat-num {
+            font-size: 38px;
+            font-weight: 800;
+            color: var(--dark-slate);
+            margin-bottom: 2px;
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, var(--dark-slate) 0%, var(--dark-blue) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-lbl {
+            font-size: 14px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Sections common styling */
+        .section-padding {
+            padding: 100px 0;
+        }
+
+        .section-title-wrapper {
+            margin-bottom: 50px;
+            text-align: center;
+        }
+
+        .section-tag {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--lime-green);
+            margin-bottom: 12px;
+            display: inline-block;
+        }
+
+        .section-title {
+            font-size: 38px;
+            font-weight: 800;
+            color: var(--dark-slate);
+            letter-spacing: -1px;
+        }
+
+        /* Showcase Sân của chúng tôi */
+        .court-card {
+            background: #ffffff;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+            transition: var(--transition-smooth);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .court-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(15, 23, 42, 0.08);
+            border-color: rgba(132, 204, 22, 0.3);
+        }
+
+        .court-img-wrapper {
+            position: relative;
+            height: 220px;
+            overflow: hidden;
+        }
+
+        .court-img-card {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: var(--transition-smooth);
+        }
+
+        .court-card:hover .court-img-card {
+            transform: scale(1.05);
+        }
+
+        .court-price-badge {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            background-color: var(--dark-slate);
+            color: var(--lime-bright);
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 15px;
+            padding: 6px 14px;
+            border-radius: 50px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+
+        .court-details {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .court-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--dark-slate);
+            margin-bottom: 10px;
+            text-decoration: none;
+        }
+
+        .court-name:hover {
+            color: var(--lime-green);
+        }
+
+        .court-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 14px;
+            color: #64748b;
+            font-weight: 500;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 15px;
+        }
+
+        .court-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .court-meta-item i {
+            color: var(--lime-green);
+        }
+
+        .btn-court-order {
+            background-color: var(--light-bg);
+            color: var(--dark-slate);
+            border: 1px solid var(--border-color);
+            font-weight: 700;
+            padding: 10px 0;
+            border-radius: 12px;
+            width: 100%;
+            display: block;
+            text-align: center;
+            text-decoration: none;
+            transition: var(--transition-smooth);
+            margin-top: auto;
+        }
+
+        .btn-court-order:hover {
+            background-color: var(--lime-green);
+            color: #ffffff;
+            border-color: var(--lime-green);
+            box-shadow: 0 4px 12px rgba(132,204,22,0.2);
+        }
+
+        /* Testimonials Section */
+        .testimonials-section {
+            background-color: var(--dark-slate);
+            color: #ffffff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .testimonial-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 30px;
+            height: 100%;
+            transition: var(--transition-smooth);
+        }
+
+        .testimonial-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(132, 204, 22, 0.25);
+            transform: translateY(-5px);
+        }
+
+        .rating-stars {
+            color: #fbbf24;
+            font-size: 15px;
+            margin-bottom: 15px;
+        }
+
+        .testimonial-text {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #cbd5e1;
+            margin-bottom: 25px;
+            font-style: italic;
+        }
+
+        .testimonial-client {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .client-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--lime-green);
+        }
+
+        .client-info h6 {
+            font-size: 15px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 2px;
+        }
+
+        .client-info span {
+            font-size: 12px;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        /* CTA Newsletter Box */
+        .cta-box-card {
+            background: linear-gradient(135deg, var(--lime-green) 0%, #76b813 100%);
+            border-radius: 24px;
+            padding: 50px;
+            color: #ffffff;
+            box-shadow: 0 15px 35px rgba(132,204,22,0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-box-card::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .cta-title {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 15px;
+        }
+
+        .cta-desc {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 0;
+            max-width: 600px;
+            line-height: 1.6;
+        }
+
+        .cta-input-group {
+            display: flex;
+            gap: 10px;
+            max-width: 450px;
+            margin-left: auto;
+        }
+
+        .cta-input {
+            border: none;
+            padding: 15px 20px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            flex-grow: 1;
+        }
+
+        .cta-input:focus {
+            outline: none;
+        }
+
+        .btn-cta-submit {
+            background-color: var(--dark-slate);
+            color: #ffffff;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+            transition: var(--transition-smooth);
+        }
+
+        .btn-cta-submit:hover {
+            background-color: #ffffff;
+            color: var(--dark-slate);
+        }
+    </style>
+}
+
+<!-- HERO SECTION -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6 text-center text-lg-start">
+                <span class="hero-tagline">Elite Pickleball Center</span>
+                <h1 class="hero-title">Sân Pickleball <span>Chuyên Nghiệp</span> Tại TP.HCM</h1>
+                <p class="hero-desc">Trải nghiệm hệ thống sân bóng Pickleball chuẩn quốc tế với mặt cỏ nhân tạo cao cấp, hệ thống chiếu sáng LED hiện đại chống chói và các dịch vụ bổ trợ chuẩn 5 sao.</p>
+                <div class="hero-buttons justify-content-center justify-content-lg-start">
+                    <a href="/Home/Booking" class="btn-primary-custom">Đặt sân ngay</a>
+                    <a href="tel:090123456" class="btn-secondary-custom"><i class="fa-solid fa-phone"></i> Gọi ngay: 090.123.456</a>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="hero-image-container">
+                    <img src="https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=600&h=450&q=80" alt="Sân Pickleball" class="hero-img" />
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- STATS BANNER -->
+<div class="container stats-banner-wrapper">
+    <div class="stats-banner">
+        <div class="row g-4">
+            <div class="col-md-3 col-6">
+                <div class="stat-card">
+                    <div class="stat-num">15+</div>
+                    <div class="stat-lbl">Sân Pickleball</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card">
+                    <div class="stat-num">500+</div>
+                    <div class="stat-lbl">Khách hàng</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card">
+                    <div class="stat-num">4.9/5</div>
+                    <div class="stat-lbl">Đánh giá sao</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card">
+                    <div class="stat-num">3</div>
+                    <div class="stat-lbl">Giải đấu lớn</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- COURTS SHOWCASE SECTION -->
+<section class="section-padding">
+    <div class="container">
+        <div class="section-title-wrapper">
+            <span class="section-tag">Hệ thống sân đấu</span>
+            <h2 class="section-title">Sân bóng của chúng tôi</h2>
+        </div>
+        
+        <div class="row g-4">
+            <!-- Sân A -->
+            <div class="col-lg-3 col-md-6">
+                <div class="court-card">
+                    <div class="court-img-wrapper">
+                        <img src="https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=400&h=300&q=80" alt="Sân A" class="court-img-card" />
+                        <span class="court-price-badge">130k/giờ</span>
+                    </div>
+                    <div class="court-details">
+                        <a href="/Home/Booking" class="court-name">Sân Pickleball A</a>
+                        <div class="court-meta">
+                            <div class="court-meta-item">
+                                <i class="fa-solid fa-users"></i>
+                                <span>Sức chứa: 5 người</span>
+                            </div>
+                            <div class="court-meta-item">
+                                <i class="fa-solid fa-star text-warning"></i>
+                                <span>4.9</span>
+                            </div>
+                        </div>
+                        <a href="/Home/Booking" class="btn-court-order">Đặt sân</a>
+                    </div>
+                </div>
+            </div>
+            <!-- Sân B -->
+            <div class="col-lg-3 col-md-6">
+                <div class="court-card">
+                    <div class="court-img-wrapper">
+                        <img src="https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?auto=format&fit=crop&w=400&h=300&q=80" alt="Sân B" class="court-img-card" />
+                        <span class="court-price-badge">130k/giờ</span>
+                    </div>
+                    <div class="court-details">
+                        <a href="/Home/Booking" class="court-name">Sân Pickleball B</a>
+                        <div class="court-meta">
+                            <div class="court-meta-item">
+                                <i class="fa-solid fa-users"></i>
+                                <span>Sức chứa: 5 người</span>
+                            </div>
+                            <div class="court-meta-item">
+                                <i class="fa-solid fa-star text-warning"></i>
+                                <span>4.8</span>
+                            </div>
+                        </div>
+                        <a href="/Home/Booking" class="btn-court-order">Đặt sân</a>
+                    </div>
+                </div>
+            </div>
+            <!-- Sân C -->
+            <div class="col-lg-3 col-md-6">
+                <div class="court-card">
+                    <div class="court-img-wrapper">
+                        <img src="https://images.unsplash.com/photo-1530541930197-ff16ac917b0e?auto=format&fit=crop&w=400&h=300&q=80" alt="Sân C" class="court-img-card" />
+                        <span class="court-price-badge">130k/giờ</span>
+                    </div>
+                    <div class="court-details">
+                        <a href="/Home/Booking" class="court-name">Sân Pickleball C</a>
+                        <div class="court-meta">
+                            <div class="court-meta-item">
+                                <i class="fa-solid fa-users"></i>
+                                <span>Sức chứa: 7 người</span>
+                            </div>
+                            <div class="court-meta-item">
+                                <i class="fa-solid fa-star text-warning"></i>
+                                <span>4.7</span>
+                            </div>
+                        </div>
+                        <a href="/Home/Booking" class="btn-court-order">Đặt sân</a>
+                    </div>
+                </div>
+            </div>
+            <!-- Sân D -->
+            <div class="col-lg-3 col-md-6">
+                <div class="court-card">
+                    <div class="court-img-wrapper">
+                        <img src="https://images.unsplash.com/photo-1519766304817-4f37bda74a27?auto=format&fit=crop&w=400&h=300&q=80" alt="Sân D" class="court-img-card" />
+                        <span class="court-price-badge">130k/giờ</span>
+                    </div>
+                    <div class="court-details">
+                        <a href="/Home/Booking" class="court-name">Sân Pickleball D</a>
+                        <div class="court-meta">
+                            <div class="court-meta-item">
+                                <i class="fa-solid fa-users"></i>
+                                <span>Sức chứa: 7 người</span>
+                            </div>
+                            <div class="court-meta-item">
+                                <i class="fa-solid fa-star text-warning"></i>
+                                <span>4.9</span>
+                            </div>
+                        </div>
+                        <a href="/Home/Booking" class="btn-court-order">Đặt sân</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- TESTIMONIALS SECTION -->
+<section class="section-padding testimonials-section">
+    <div class="container">
+        <div class="section-title-wrapper">
+            <span class="section-tag" style="color: var(--lime-bright);">Đánh giá khách quan</span>
+            <h2 class="section-title text-white">Khách hàng nói gì về chúng tôi</h2>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-4">
+                <div class="testimonial-card">
+                    <div class="rating-stars">
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                    </div>
+                    <p class="testimonial-text">"Sân bãi cực kỳ mới và đẹp. Hệ thống chiếu sáng vào ban đêm hoạt động hoàn hảo, không bị chói mắt khi đỡ bóng bổng. Nhân viên phục vụ nước uống tận tình, tôi chắc chắn sẽ cùng hội bạn quay lại đặt sân thường xuyên."</p>
+                    <div class="testimonial-client">
+                        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=80&h=80&q=80" alt="Anh Tuấn" class="client-avatar" />
+                        <div class="client-info">
+                            <h6>Anh Tuấn</h6>
+                            <span>Hội viên Vàng - Chơi 6 tháng</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-4">
+                <div class="testimonial-card">
+                    <div class="rating-stars">
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                    </div>
+                    <p class="testimonial-text">"Mức giá thuê rất phải chăng, sân nằm ở khu trung tâm đắc địa nhưng diện tích rộng thoáng mát. Hệ thống đặt sân trực tuyến rất trực quan, dễ chọn giờ trống. Dịch vụ cho thuê vợt cũng là loại chất lượng cao."</p>
+                    <div class="testimonial-client">
+                        <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=80&h=80&q=80" alt="Chị Lan" class="client-avatar" />
+                        <div class="client-info">
+                            <h6>Chị Lan</h6>
+                            <span>Khách hàng đặt lẻ</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-4 mx-md-auto mx-lg-0">
+                <div class="testimonial-card">
+                    <div class="rating-stars">
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star-half-stroke"></i>
+                    </div>
+                    <p class="testimonial-text">"Tôi rất hài lòng khi tổ chức giải giao hữu nội bộ tại đây. Ban quản lý sân hỗ trợ nhiệt tình từ bố trí trọng tài đến công cụ setup giải đấu. Không khí nhộn nhịp, nước giải khát đa dạng."</p>
+                    <div class="testimonial-client">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&h=80&q=80" alt="Anh Hoàng" class="client-avatar" />
+                        <div class="client-info">
+                            <h6>Anh Hoàng</h6>
+                            <span>Trưởng ban Thể thao Doanh nghiệp</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- NEWSLETTER / CTA BOX SECTION -->
+<section class="section-padding bg-light">
+    <div class="container">
+        <div class="cta-box-card">
+            <div class="row align-items-center g-4">
+                <div class="col-lg-7 text-center text-lg-start">
+                    <h3 class="cta-title">Nhận tin tức ưu đãi và Voucher</h3>
+                    <p class="cta-desc">Để lại email để không bỏ lỡ các đợt flashsale giờ vàng giá rẻ và thông tin các giải đấu Pickleball sắp diễn ra tại câu lạc bộ.</p>
+                </div>
+                <div class="col-lg-5">
+                    <form onsubmit="alert('Đã gửi thông tin! Chúng tôi sẽ gửi ưu đãi cho bạn sớm nhất.'); return false;" class="cta-input-group">
+                        <input type="email" class="cta-input" placeholder="Nhập địa chỉ email của bạn..." required />
+                        <button type="submit" class="btn-cta-submit">Đăng ký</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

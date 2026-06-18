@@ -1,0 +1,205 @@
+@inject NavigationManager NavigationManager
+
+<div class="list-group list-group-flush flex-grow-1" style="overflow-y: auto;">
+    <!-- Dashboard -->
+    <NavLink href="/admin/dashboard" Match="NavLinkMatch.All" class="list-group-item list-group-item-action">
+        <i class="fa-solid fa-chart-line"></i> Dashboard
+    </NavLink>
+
+    <!-- 1. Quản lý Sân Pickleball -->
+    <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(IsMenuOpen("pitches") ? "active" : "")" 
+       @onclick='() => ToggleSubMenu("pitches")' role="button" aria-expanded="@(IsMenuOpen("pitches") ? "true" : "false")">
+        <span><i class="fa-solid fa-table-tennis-paddle-ball text-success"></i> Quản lý sân Pickleball</span>
+        <i class="bi bi-chevron-down small toggle-icon"></i>
+    </a>
+    <div class="collapse @(IsMenuOpen("pitches") ? "show" : "")">
+        <NavLink href="/admin/pitches" Match="NavLinkMatch.All" class="collapse-menu-item">
+            <i class="fa-solid fa-list-ul"></i> Danh sách sân
+        </NavLink>
+        <NavLink href="/admin/pitches/create" Match="NavLinkMatch.All" class="collapse-menu-item">
+            <i class="fa-solid fa-plus"></i> Thêm sân mới
+        </NavLink>
+        <NavLink href="/admin/pitches/timeslots" Match="NavLinkMatch.All" class="collapse-menu-item">
+            <i class="fa-solid fa-clock"></i> Quản lý khung giờ
+        </NavLink>
+    </div>
+
+    <!-- 2. Quản lý đặt sân -->
+    <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(IsMenuOpen("bookings") ? "active" : "")" 
+       @onclick='() => ToggleSubMenu("bookings")' role="button" aria-expanded="@(IsMenuOpen("bookings") ? "true" : "false")">
+        <span><i class="fa-regular fa-calendar-check"></i> Quản lý đặt sân <span class="text-warning">★</span></span>
+        <i class="bi bi-chevron-down small toggle-icon"></i>
+    </a>
+    <div class="collapse @(IsMenuOpen("bookings") ? "show" : "")">
+        <NavLink href="/admin/bookings/calendar" Match="NavLinkMatch.All" class="collapse-menu-item">
+            <i class="fa-regular fa-calendar"></i> Lịch đặt sân (Calendar)
+        </NavLink>
+        <NavLink href="/admin/bookings" Match="NavLinkMatch.All" class="collapse-menu-item">
+            <i class="fa-solid fa-list-check"></i> Danh sách đặt sân
+        </NavLink>
+        <NavLink href="/admin/bookings/create" Match="NavLinkMatch.All" class="collapse-menu-item">
+            <i class="fa-solid fa-calendar-plus"></i> Đặt sân mới
+        </NavLink>
+        <NavLink href="/admin/bookings/confirm" Match="NavLinkMatch.All" class="collapse-menu-item">
+            <i class="fa-solid fa-circle-check"></i> Xác nhận đặt sân
+        </NavLink>
+        <NavLink href="/admin/bookings/history" Match="NavLinkMatch.All" class="collapse-menu-item">
+            <i class="fa-solid fa-history"></i> Lịch sử đặt sân
+        </NavLink>
+    </div>
+
+    <!-- 3. Quản lý bài viết -->
+    <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(IsMenuOpen("articles") ? "active" : "")" 
+       @onclick='() => ToggleSubMenu("articles")' role="button">
+        <span><i class="fa-regular fa-newspaper"></i> Quản lý bài viết</span>
+        <i class="bi bi-chevron-down small toggle-icon"></i>
+    </a>
+    <div class="collapse @(IsMenuOpen("articles") ? "show" : "")">
+        <NavLink href="/admin/posts" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-list"></i> Danh sách bài viết</NavLink>
+        <NavLink href="/admin/posts/create" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-file-circle-plus"></i> Thêm bài viết mới</NavLink>
+        <NavLink href="/admin/posts/categories" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-folder-tree"></i> Danh mục bài viết</NavLink>
+        <NavLink href="/admin/posts/comments" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-comments"></i> Bình luận</NavLink>
+    </div>
+
+    <!-- 4. Quản lý khách hàng -->
+    <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(IsMenuOpen("customers") ? "active" : "")" 
+       @onclick='() => ToggleSubMenu("customers")' role="button">
+        <span><i class="fa-solid fa-user-group"></i> Quản lý khách hàng</span>
+        <i class="bi bi-chevron-down small toggle-icon"></i>
+    </a>
+    <div class="collapse @(IsMenuOpen("customers") ? "show" : "")">
+        <NavLink href="/admin/customers" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-users"></i> Danh sách khách hàng</NavLink>
+        <NavLink href="/admin/customers/create" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-user-plus"></i> Thêm khách hàng mới</NavLink>
+        <NavLink href="/admin/customers/groups" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-award"></i> Nhóm khách hàng</NavLink>
+        <NavLink href="/admin/customers/history" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-history"></i> Lịch sử đặt sân</NavLink>
+    </div>
+
+    <!-- 5. Quản lý dịch vụ -->
+    <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(IsMenuOpen("services") ? "active" : "")" 
+       @onclick='() => ToggleSubMenu("services")' role="button">
+        <span><i class="fa-solid fa-bell-concierge"></i> Quản lý dịch vụ</span>
+        <i class="bi bi-chevron-down small toggle-icon"></i>
+    </a>
+    <div class="collapse @(IsMenuOpen("services") ? "show" : "")">
+        <NavLink href="/admin/services/court-rentals" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-table-tennis-paddle-ball"></i> Dịch vụ thuê sân</NavLink>
+        <NavLink href="/admin/services/rent-paddles" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-hockey-puck"></i> Cho thuê vợt</NavLink>
+        <NavLink href="/admin/services/rent-balls" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-circle"></i> Cho thuê bóng</NavLink>
+        <NavLink href="/admin/services/coaching" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-graduation-cap"></i> Dịch vụ huấn luyện</NavLink>
+        <NavLink href="/admin/services/tournaments" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-trophy"></i> Tổ chức giải đấu</NavLink>
+    </div>
+
+    <!-- 6. Quản lý mua hàng -->
+    <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(IsMenuOpen("shop") ? "active" : "")" 
+       @onclick='() => ToggleSubMenu("shop")' role="button">
+        <span><i class="fa-solid fa-cart-shopping"></i> Quản lý mua hàng</span>
+        <i class="bi bi-chevron-down small toggle-icon"></i>
+    </a>
+    <div class="collapse @(IsMenuOpen("shop") ? "show" : "")">
+        <NavLink href="/admin/shop/orders" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-clipboard-list"></i> Danh sách đơn hàng</NavLink>
+        <NavLink href="/admin/shop/orders/create" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-cart-plus"></i> Đơn hàng mới</NavLink>
+        <NavLink href="/admin/shop/products" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-box-open"></i> Sản phẩm</NavLink>
+        <NavLink href="/admin/shop/imports" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-truck-loading"></i> Nhập hàng</NavLink>
+        <NavLink href="/admin/shop/inventory" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-boxes-stacked"></i> Tồn kho</NavLink>
+    </div>
+
+    <!-- 7. Sổ quỹ -->
+    <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(IsMenuOpen("finance") ? "active" : "")" 
+       @onclick='() => ToggleSubMenu("finance")' role="button">
+        <span><i class="fa-solid fa-wallet"></i> Sổ quỹ</span>
+        <i class="bi bi-chevron-down small toggle-icon"></i>
+    </a>
+    <div class="collapse @(IsMenuOpen("finance") ? "show" : "")">
+        <NavLink href="/admin/finance/court-income" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-money-bill-wave"></i> Thu tiền sân</NavLink>
+        <NavLink href="/admin/finance/expenses" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-file-invoice-dollar"></i> Chi phí vận hành</NavLink>
+        <NavLink href="/admin/finance/reports" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-chart-pie"></i> Báo cáo thu chi</NavLink>
+        <NavLink href="/admin/finance/reconciliation" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-scale-balanced"></i> Đối soát</NavLink>
+    </div>
+
+    <!-- 8. Quản lý Masterdata -->
+    <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(IsMenuOpen("masterdata") ? "active" : "")" 
+       @onclick='() => ToggleSubMenu("masterdata")' role="button">
+        <span><i class="fa-solid fa-database"></i> Quản lý Masterdata</span>
+        <i class="bi bi-chevron-down small toggle-icon"></i>
+    </a>
+    <div class="collapse @(IsMenuOpen("masterdata") ? "show" : "")">
+        <NavLink href="/admin/masterdata/default-slots" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-clock"></i> Khung giờ mặc định</NavLink>
+        <NavLink href="/admin/masterdata/service-prices" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-hand-holding-dollar"></i> Giá dịch vụ</NavLink>
+        <NavLink href="/admin/masterdata/product-categories" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-tags"></i> Danh mục sản phẩm</NavLink>
+        <NavLink href="/admin/masterdata/units" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-weight-scale"></i> Đơn vị tính</NavLink>
+    </div>
+
+    <!-- 9. Khuyến mại -->
+    <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(IsMenuOpen("promotions") ? "active" : "")" 
+       @onclick='() => ToggleSubMenu("promotions")' role="button">
+        <span><i class="fa-solid fa-tag"></i> Khuyến mại</span>
+        <i class="bi bi-chevron-down small toggle-icon"></i>
+    </a>
+    <div class="collapse @(IsMenuOpen("promotions") ? "show" : "")">
+        <NavLink href="/admin/promotions" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-rectangle-ad"></i> Danh sách khuyến mại</NavLink>
+        <NavLink href="/admin/promotions/create" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-circle-plus"></i> Thêm khuyến mại mới</NavLink>
+        <NavLink href="/admin/promotions/coupons" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-ticket-simple"></i> Mã giảm giá</NavLink>
+        <NavLink href="/admin/promotions/offers" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-gift"></i> Chương trình ưu đãi</NavLink>
+    </div>
+
+    <!-- 10. Cấu hình website -->
+    <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(IsMenuOpen("config") ? "active" : "")" 
+       @onclick='() => ToggleSubMenu("config")' role="button">
+        <span><i class="fa-solid fa-gears"></i> Cấu hình website</span>
+        <i class="bi bi-chevron-down small toggle-icon"></i>
+    </a>
+    <div class="collapse @(IsMenuOpen("config") ? "show" : "")">
+        <NavLink href="/admin/config/general" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-info-circle"></i> Thông tin chung</NavLink>
+        <NavLink href="/admin/config/branding" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-images"></i> Logo & Banner</NavLink>
+        <NavLink href="/admin/config/contact" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-address-book"></i> Liên hệ</NavLink>
+        <NavLink href="/admin/config/display" Match="NavLinkMatch.All" class="collapse-menu-item"><i class="fa-solid fa-window-restore"></i> Cài đặt hiển thị</NavLink>
+    </div>
+
+    <!-- 11. Hệ Thống (Ngôn ngữ) -->
+    <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(IsMenuOpen("settings") ? "active" : "")" 
+       @onclick='() => ToggleSubMenu("settings")' role="button">
+        <span><i class="fa-solid fa-language"></i> Hệ Thống</span>
+        <i class="bi bi-chevron-down small toggle-icon"></i>
+    </a>
+    <div class="collapse @(IsMenuOpen("settings") ? "show" : "")">
+        <NavLink href="/admin/languages" Match="NavLinkMatch.All" class="collapse-menu-item">
+            <i class="fa-solid fa-translate"></i> Quản lý Ngôn ngữ
+        </NavLink>
+    </div>
+</div>
+
+@code {
+    private string openMenu = "";
+
+    private void ToggleSubMenu(string menuName)
+    {
+        if (openMenu == menuName)
+        {
+            openMenu = "";
+        }
+        else
+        {
+            openMenu = menuName;
+        }
+    }
+
+    private bool IsMenuOpen(string menuName)
+    {
+        return openMenu == menuName;
+    }
+
+    protected override void OnInitialized()
+    {
+        var uri = NavigationManager.Uri.ToLower();
+        if (uri.Contains("pitches")) openMenu = "pitches";
+        else if (uri.Contains("bookings")) openMenu = "bookings";
+        else if (uri.Contains("posts") || uri.Contains("comments")) openMenu = "articles";
+        else if (uri.Contains("customers")) openMenu = "customers";
+        else if (uri.Contains("services")) openMenu = "services";
+        else if (uri.Contains("shop")) openMenu = "shop";
+        else if (uri.Contains("finance")) openMenu = "finance";
+        else if (uri.Contains("masterdata")) openMenu = "masterdata";
+        else if (uri.Contains("promotions")) openMenu = "promotions";
+        else if (uri.Contains("config")) openMenu = "config";
+        else if (uri.Contains("languages")) openMenu = "settings";
+    }
+}

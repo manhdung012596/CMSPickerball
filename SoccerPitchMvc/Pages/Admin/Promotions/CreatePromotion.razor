@@ -1,0 +1,395 @@
+@page "/admin/promotions/create"
+@page "/admin/promotions/edit/{Id:int}"
+@layout AdminLayout
+@using SoccerPitchMvc.Models
+@using SoccerPitchMvc.Services
+@using AutoMapper
+@inject IPromotionService PromotionService
+@inject ToastService Toast
+@inject NavigationManager NavigationManager
+@inject IMapper Mapper
+
+<PageTitle>@(Id.HasValue ? "Sửa khuyến mại" : "Thêm khuyến mại mới") - Quản trị</PageTitle>
+
+<div class="page-header d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h1 class="page-title">
+            <i class="fas fa-@(Id.HasValue ? "edit" : "plus-circle") me-2 text-primary"></i>
+            @(Id.HasValue ? "Chỉnh sửa khuyến mại" : "Tạo chương trình khuyến mại")
+        </h1>
+        <p class="text-muted mb-0">@(Id.HasValue ? $"Cập nhật thông tin khuyến mại #{Id}" : "Thiết lập chương trình ưu đãi hoặc mã giảm giá mới")</p>
+    </div>
+    <button class="btn btn-outline-secondary" @onclick="GoBack">
+        <i class="fas fa-arrow-left me-1"></i> Quay lại
+    </button>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body p-4">
+                <EditForm Model="Model" OnValidSubmit="SavePromotion">
+                    <DataAnnotationsValidator />
+
+                    @if (!string.IsNullOrEmpty(ErrorMessage))
+                    {
+                        <div class="alert alert-danger py-2 small mb-4">
+                            <i class="fas fa-exclamation-circle me-1"></i> @ErrorMessage
+                        </div>
+                    }
+
+                    <!-- Phân loại Khuyến mại -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold d-block">Hình thức áp dụng <span class="text-danger">*</span></label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="promoType" id="typeOffer" autocomplete="off" checked="@(!Model.IsCoupon)" @onclick="() => SetIsCoupon(false)">
+                            <label class="btn btn-outline-primary py-2.5" for="typeOffer">
+                                <i class="fa-solid fa-gift me-2"></i>Chương trình ưu đãi (Tự động áp dụng)
+                            </label>
+
+                            <input type="radio" class="btn-check" name="promoType" id="typeCoupon" autocomplete="off" checked="@(Model.IsCoupon)" @onclick="() => SetIsCoupon(true)">
+                            <label class="btn btn-outline-primary py-2.5" for="typeCoupon">
+                                <i class="fa-solid fa-ticket-simple me-2"></i>Mã giảm giá (Khách tự nhập Coupon)
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Tên & Code -->
+                    <div class="row g-3 mb-3">
+                        <div class="@(Model.IsCoupon ? "col-md-7" : "col-12")">
+                            <label class="form-label fw-semibold">Tên chương trình <span class="text-danger">*</span></label>
+                            <InputText class="form-control" @bind-Value="Model.Name" placeholder="VD: Khuyến mại Hè Sôi Động, Happy Hour..." />
+                            <ValidationMessage For="@(() => Model.Name)" class="text-danger small mt-1" />
+                        </div>
+                        @if (Model.IsCoupon)
+                        {
+                            <div class="col-md-5">
+                                <label class="form-label fw-semibold">Mã giảm giá (Coupon Code) <span class="text-danger">*</span></label>
+                                <InputText class="form-control font-monospace" @bind-Value="Model.Code" placeholder="VD: SUMMER50, NEWPLAY10..." style="text-transform: uppercase;" />
+                                <ValidationMessage For="@(() => Model.Code)" class="text-danger small mt-1" />
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Mô tả -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Mô tả ngắn</label>
+                        <InputTextArea class="form-control" @bind-Value="Model.Description" rows="2" placeholder="Thông tin chi tiết chương trình ưu đãi gửi tới khách hàng..." />
+                        <ValidationMessage For="@(() => Model.Description)" class="text-danger small mt-1" />
+                    </div>
+
+                    <!-- Loại giảm giá & Giá trị -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Loại giảm giá</label>
+                            <select class="form-select" @bind="Model.DiscountType">
+                                <option value="0">Giảm giá bằng Tiền mặt (VND)</option>
+                                <option value="1">Giảm giá theo Phần trăm (%)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Giá trị giảm giá <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <InputNumber class="form-control fw-bold" @bind-Value="Model.DiscountValue" min="0.01" />
+                                <span class="input-group-text bg-light fw-bold">@(Model.DiscountType == 0 ? "đ" : "%")</span>
+                            </div>
+                            <ValidationMessage For="@(() => Model.DiscountValue)" class="text-danger small mt-1" />
+                        </div>
+                    </div>
+
+                    <!-- Điều kiện: Đơn tối thiểu & Giảm tối đa -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Giá trị hóa đơn tối thiểu</label>
+                            <div class="input-group">
+                                <InputNumber class="form-control" @bind-Value="Model.MinOrderAmount" placeholder="VD: 100,000" />
+                                <span class="input-group-text bg-light">đ</span>
+                            </div>
+                            <div class="form-text small">Đơn hàng đặt sân đạt mức này trở lên mới được dùng mã.</div>
+                            <ValidationMessage For="@(() => Model.MinOrderAmount)" class="text-danger small mt-1" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Số tiền giảm tối đa</label>
+                            <div class="input-group">
+                                <InputNumber class="form-control" @bind-Value="Model.MaxDiscountAmount" placeholder="VD: 50,000" disabled="@(Model.DiscountType == 0)" />
+                                <span class="input-group-text bg-light">đ</span>
+                            </div>
+                            <div class="form-text small">Chỉ áp dụng cho giảm giá phần trăm.</div>
+                            <ValidationMessage For="@(() => Model.MaxDiscountAmount)" class="text-danger small mt-1" />
+                        </div>
+                    </div>
+
+                    <!-- Thời hạn & Giới hạn sử dụng -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Ngày bắt đầu <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" @bind="StartDateOnly" />
+                            <ValidationMessage For="@(() => Model.StartDate)" class="text-danger small mt-1" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Ngày kết thúc <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" @bind="EndDateOnly" />
+                            <ValidationMessage For="@(() => Model.EndDate)" class="text-danger small mt-1" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Giới hạn sử dụng (Coupon)</label>
+                            <InputNumber class="form-control" @bind-Value="Model.UsageLimit" placeholder="Để trống nếu vô hạn" disabled="@(!Model.IsCoupon)" />
+                            <div class="form-text small">Tổng lượt sử dụng tối đa.</div>
+                            <ValidationMessage For="@(() => Model.UsageLimit)" class="text-danger small mt-1" />
+                        </div>
+                    </div>
+
+                    <!-- Trạng thái -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Trạng thái phát hành</label>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="card p-3 border cursor-pointer @(Model.Status == 1 ? "border-success bg-success bg-opacity-5" : "")" @onclick="() => Model.Status = 1">
+                                    <div class="d-flex align-items-center">
+                                        <input type="radio" name="status" class="form-check-input me-2" checked="@(Model.Status == 1)" />
+                                        <div>
+                                            <div class="fw-semibold text-success">Kích hoạt</div>
+                                            <small class="text-muted">Áp dụng ngay khi đến thời hạn</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card p-3 border cursor-pointer @(Model.Status == 0 ? "border-warning bg-warning bg-opacity-5" : "")" @onclick="() => Model.Status = 0">
+                                    <div class="d-flex align-items-center">
+                                        <input type="radio" name="status" class="form-check-input me-2" checked="@(Model.Status == 0)" />
+                                        <div>
+                                            <div class="fw-semibold text-warning">Bản nháp</div>
+                                            <small class="text-muted">Chưa hiển thị/áp dụng</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card p-3 border cursor-pointer @(Model.Status == 2 ? "border-danger bg-danger bg-opacity-5" : "")" @onclick="() => Model.Status = 2">
+                                    <div class="d-flex align-items-center">
+                                        <input type="radio" name="status" class="form-check-input me-2" checked="@(Model.Status == 2)" />
+                                        <div>
+                                            <div class="fw-semibold text-danger">Tạm dừng</div>
+                                            <small class="text-muted">Ngưng áp dụng tạm thời</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                        <button type="button" class="btn btn-light" @onclick="GoBack">Hủy</button>
+                        <button type="submit" class="btn btn-primary" disabled="@IsSaving">
+                            @if (IsSaving)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1"></span>
+                            }
+                            <i class="fas fa-save me-1"></i> Lưu thông tin
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview / Summary sidebar -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 sticky-top" style="top: 20px;">
+            <div class="card-header bg-light py-3">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-eye me-2 text-info"></i>Xem trước thẻ khuyến mại</h6>
+            </div>
+            <div class="card-body text-center p-4">
+                <div class="promo-ticket p-3 rounded-3 border-2 border-dashed @(Model.IsCoupon ? "border-info bg-info bg-opacity-5" : "border-warning bg-warning bg-opacity-5")">
+                    <div class="ticket-type small fw-semibold text-uppercase text-muted mb-2">
+                        @(Model.IsCoupon ? "MÃ GIẢM GIÁ (COUPON)" : "CHƯƠNG TRÌNH ƯU ĐÃI (OFFER)")
+                    </div>
+                    <div class="ticket-icon fs-1 mb-2 text-primary">
+                        <i class="fa-solid fa-@(Model.IsCoupon ? "ticket" : "gift") text-@(Model.IsCoupon ? "info" : "warning")"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark">@(string.IsNullOrEmpty(Model.Name) ? "Tên chương trình khuyến mại" : Model.Name)</h5>
+                    <div class="display-6 fw-bold text-success my-3">
+                        @if (Model.DiscountType == 0)
+                        {
+                            <span>@Model.DiscountValue.ToString("N0")đ</span>
+                        }
+                        else
+                        {
+                            <span>@Model.DiscountValue%</span>
+                        }
+                    </div>
+                    @if (Model.IsCoupon && !string.IsNullOrEmpty(Model.Code))
+                    {
+                        <div class="bg-white border rounded font-monospace py-2 px-3 fw-bold fs-5 mb-3 select-all border-dashed border-info text-uppercase">
+                            @Model.Code
+                        </div>
+                    }
+                    <p class="text-muted small mb-0">
+                        @(string.IsNullOrEmpty(Model.Description) ? "Mô tả ngắn gọn điều kiện và thể lệ chương trình khuyến mại." : Model.Description)
+                    </p>
+                </div>
+
+                <div class="text-start mt-4 border-top pt-3 small">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Áp dụng từ:</span>
+                        <span class="fw-semibold">@Model.StartDate.ToString("dd/MM/yyyy")</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Hết hạn:</span>
+                        <span class="fw-semibold text-danger">@Model.EndDate.ToString("dd/MM/yyyy")</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Đơn tối thiểu:</span>
+                        <span class="fw-semibold">
+                            @(Model.MinOrderAmount.HasValue && Model.MinOrderAmount.Value > 0 ? $"{Model.MinOrderAmount.Value:N0}đ" : "0đ")
+                        </span>
+                    </div>
+                    @if (Model.IsCoupon)
+                    {
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Số lượng mã:</span>
+                            <span class="fw-semibold">@(Model.UsageLimit.HasValue ? $"{Model.UsageLimit.Value} lượt" : "Không giới hạn")</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .promo-ticket {
+        border-style: dashed !important;
+        position: relative;
+    }
+    .cursor-pointer {
+        cursor: pointer;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    private CreatePromotionDto Model = new();
+    private bool IsSaving = false;
+    private string ErrorMessage = string.Empty;
+
+    // Helper properties to bind Date value without time component
+    private DateTime StartDateOnly
+    {
+        get => Model.StartDate;
+        set => Model.StartDate = value;
+    }
+
+    private DateTime EndDateOnly
+    {
+        get => Model.EndDate;
+        set => Model.EndDate = value;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id.HasValue)
+        {
+            var promo = await PromotionService.GetPromotionByIdAsync(Id.Value);
+            if (promo != null)
+            {
+                // Map from ListDto to CreatePromotionDto (essentially same properties)
+                Model = new CreatePromotionDto
+                {
+                    Name = promo.Name,
+                    Code = promo.Code,
+                    Description = promo.Description,
+                    DiscountType = promo.DiscountType,
+                    DiscountValue = promo.DiscountValue,
+                    MinOrderAmount = promo.MinOrderAmount,
+                    MaxDiscountAmount = promo.MaxDiscountAmount,
+                    StartDate = promo.StartDate,
+                    EndDate = promo.EndDate,
+                    UsageLimit = promo.UsageLimit,
+                    Status = promo.Status,
+                    IsCoupon = promo.IsCoupon
+                };
+            }
+            else
+            {
+                Toast.ShowError("Không tìm thấy chương trình khuyến mại.");
+                NavigationManager.NavigateTo("/admin/promotions");
+            }
+        }
+        else
+        {
+            Model = new CreatePromotionDto();
+        }
+    }
+
+    private void SetIsCoupon(bool isCoupon)
+    {
+        Model.IsCoupon = isCoupon;
+        if (!isCoupon)
+        {
+            Model.Code = null;
+            Model.UsageLimit = null;
+        }
+    }
+
+    private async Task SavePromotion()
+    {
+        IsSaving = true;
+        ErrorMessage = string.Empty;
+
+        try
+        {
+            if (Id.HasValue)
+            {
+                // Update
+                var updateDto = new UpdatePromotionDto
+                {
+                    Id = Id.Value,
+                    Name = Model.Name,
+                    Code = Model.Code,
+                    Description = Model.Description,
+                    DiscountType = Model.DiscountType,
+                    DiscountValue = Model.DiscountValue,
+                    MinOrderAmount = Model.MinOrderAmount,
+                    MaxDiscountAmount = Model.MaxDiscountAmount,
+                    StartDate = Model.StartDate,
+                    EndDate = Model.EndDate,
+                    UsageLimit = Model.UsageLimit,
+                    Status = Model.Status,
+                    IsCoupon = Model.IsCoupon
+                };
+
+                await PromotionService.UpdatePromotionAsync(updateDto);
+                Toast.ShowSuccess("Đã cập nhật khuyến mại thành công.");
+            }
+            else
+            {
+                // Create
+                await PromotionService.CreatePromotionAsync(Model);
+                Toast.ShowSuccess("Đã tạo mới khuyến mại thành công.");
+            }
+
+            NavigationManager.NavigateTo("/admin/promotions");
+        }
+        catch (InvalidOperationException ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Đã xảy ra lỗi hệ thống: {ex.Message}";
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("/admin/promotions");
+    }
+}

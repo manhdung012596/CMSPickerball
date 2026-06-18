@@ -1,0 +1,311 @@
+@page "/admin/bookings"
+@layout AdminLayout
+@inject SoccerPitchMvc.Services.IBookingService BookingService
+@inject NavigationManager NavigationManager
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold text-dark mb-1"><i class="bi bi-calendar-check text-success"></i> Quản lý Đặt Sân</h2>
+            <p class="text-muted">Danh sách và trạng thái các lượt đặt sân Pickleball của trung tâm</p>
+        </div>
+        <button class="btn btn-success btn-lg shadow-sm" @onclick="NavigateToCreate">
+            <i class="bi bi-calendar-plus"></i> Đặt Sân Mới
+        </button>
+    </div>
+
+    @if (errorMessage != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill"></i> @errorMessage
+            <button type="button" class="btn-close" @onclick="() => errorMessage = null" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (successMessage != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill"></i> @successMessage
+            <button type="button" class="btn-close" @onclick="() => successMessage = null" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Filtering Section -->
+    <div class="card shadow-sm border-0 mb-4 rounded-3">
+        <div class="card-body p-3 bg-light">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-secondary mb-1">Lọc theo sân</label>
+                    <select class="form-select form-select-sm" @bind="selectedPitchId">
+                        <option value="0">-- Tất cả sân --</option>
+                        @foreach (var pitch in pitches)
+                        {
+                            <option value="@pitch.Id">@pitch.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-secondary mb-1">Lọc theo trạng thái</label>
+                    <select class="form-select form-select-sm" @bind="selectedStatus">
+                        <option value="-1">-- Tất cả trạng thái --</option>
+                        <option value="0">Chờ xác nhận</option>
+                        <option value="1">Đã xác nhận</option>
+                        <option value="2">Đã thanh toán</option>
+                        <option value="3">Đã hủy</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold text-secondary mb-1">Tìm kiếm khách hàng</label>
+                    <input type="text" class="form-control form-control-sm" placeholder="Nhập tên, số điện thoại..." @bind="searchTerm" @bind:event="oninput" />
+                </div>
+                <div class="col-md-3 d-flex align-items-end gap-2 mt-4">
+                    <button class="btn btn-outline-secondary btn-sm px-3" @onclick="ResetFilters">Mặc định</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Table -->
+    <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="py-3 px-4">Khách hàng</th>
+                            <th class="py-3">Sân Pickleball</th>
+                            <th class="py-3">Khung Giờ</th>
+                            <th class="py-3">Ngày đặt</th>
+                            <th class="py-3">Tổng Tiền</th>
+                            <th class="py-3">Trạng thái</th>
+                            <th class="py-3 text-end px-4">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (filteredBookings == null)
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    <div class="spinner-border text-success" role="status">
+                                        <span class="visually-hidden">Đang tải...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else if (!filteredBookings.Any())
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox-fill display-4 d-block mb-3 text-secondary"></i>
+                                    Không có đơn đặt sân nào phù hợp với bộ lọc.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var booking in filteredBookings)
+                            {
+                                <tr>
+                                    <td class="py-3 px-4">
+                                        <div class="fw-bold text-dark">@booking.Customer?.FullName</div>
+                                        <div class="text-muted small"><i class="bi bi-telephone"></i> @booking.Customer?.PhoneNumber</div>
+                                    </td>
+                                    <td class="fw-bold">@booking.Pitch?.Name</td>
+                                    <td class="fw-semibold">
+                                        @(booking.TimeSlot != null 
+                                            ? $"{booking.TimeSlot.StartTime:hh\\:mm} - {booking.TimeSlot.EndTime:hh\\:mm}" 
+                                            : "N/A")
+                                    </td>
+                                    <td class="text-muted">@booking.BookingDate.ToString("dd/MM/yyyy")</td>
+                                    <td class="fw-bold text-success">@booking.TotalPrice.ToString("N0") VNĐ</td>
+                                    <td>
+                                        @if (booking.Status == 0)
+                                        {
+                                            <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> Chờ xác nhận</span>
+                                        }
+                                        else if (booking.Status == 1)
+                                        {
+                                            <span class="badge bg-primary"><i class="bi bi-patch-check-fill"></i> Đã xác nhận</span>
+                                        }
+                                        else if (booking.Status == 2)
+                                        {
+                                            <span class="badge bg-success"><i class="bi bi-check-circle-fill"></i> Đã thanh toán</span>
+                                        }
+                                        else if (booking.Status == 3)
+                                        {
+                                            <span class="badge bg-danger"><i class="bi bi-x-circle-fill"></i> Đã hủy</span>
+                                        }
+                                    </td>
+                                    <td class="text-end px-4">
+                                        <div class="btn-group shadow-sm">
+                                            @if (booking.Status == 0)
+                                            {
+                                                <button class="btn btn-outline-primary btn-sm" @onclick="() => UpdateStatus(booking.Id, 1)" title="Xác nhận">
+                                                    <i class="bi bi-check-lg"></i>
+                                                </button>
+                                            }
+                                            @if (booking.Status == 0 || booking.Status == 1)
+                                            {
+                                                <button class="btn btn-outline-success btn-sm" @onclick="() => UpdateStatus(booking.Id, 2)" title="Thanh toán">
+                                                    <i class="bi bi-cash-coin"></i>
+                                                </button>
+                                            }
+                                            @if (booking.Status != 3)
+                                            {
+                                                <button class="btn btn-outline-warning btn-sm" @onclick="() => UpdateStatus(booking.Id, 3)" title="Hủy đơn">
+                                                    <i class="bi bi-slash-circle"></i>
+                                                </button>
+                                            }
+                                            <button class="btn btn-outline-danger btn-sm" @onclick="() => RequestDelete(booking)" title="Xóa">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom modal for Delete Confirmation -->
+@if (bookingToDelete != null)
+{
+    <div class="modal-backdrop fade show"></div>
+    <div class="modal fade show d-block" tabindex="-1" style="z-index: 1050;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle-fill"></i> Xác nhận xóa lượt đặt</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CancelDelete" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-start py-4">
+                    Bạn có chắc chắn muốn xóa đơn đặt sân của khách hàng <strong class="text-danger">@bookingToDelete.Customer?.FullName</strong> vào ngày <strong>@bookingToDelete.BookingDate.ToString("dd/MM/yyyy")</strong> không? Hành động này sẽ xóa vĩnh viễn đơn đặt.
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-secondary" @onclick="CancelDelete">Hủy bỏ</button>
+                    <button type="button" class="btn btn-danger px-4" @onclick="ConfirmDelete">Đồng ý xóa</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Booking>? bookings;
+    private List<Pitch> pitches = new();
+    private Booking? bookingToDelete;
+    private string? errorMessage;
+    private string? successMessage;
+
+    // Filters
+    private int selectedPitchId = 0;
+    private int selectedStatus = -1;
+    private string searchTerm = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        bookings = await BookingService.GetActiveBookingsAsync();
+        pitches = await BookingService.GetActivePitchesAsync();
+    }
+
+    private IEnumerable<Booking> filteredBookings
+    {
+        get
+        {
+            if (bookings == null) return Enumerable.Empty<Booking>();
+            
+            var query = bookings.AsEnumerable();
+
+            if (selectedPitchId != 0)
+            {
+                query = query.Where(b => b.PitchId == selectedPitchId);
+            }
+
+            if (selectedStatus != -1)
+            {
+                query = query.Where(b => b.Status == selectedStatus);
+            }
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var term = searchTerm.ToLower();
+                query = query.Where(b => 
+                    (b.Customer?.FullName?.ToLower().Contains(term) == true) || 
+                    (b.Customer?.PhoneNumber?.Contains(term) == true)
+                );
+            }
+
+            return query;
+        }
+    }
+
+    private void NavigateToCreate()
+    {
+        NavigationManager.NavigateTo("admin/bookings/create");
+    }
+
+    private async Task UpdateStatus(int id, int status)
+    {
+        var success = await BookingService.UpdateBookingStatusAsync(id, status);
+        if (success)
+        {
+            var statusLabel = status switch {
+                1 => "xác nhận",
+                2 => "thanh toán",
+                3 => "hủy",
+                _ => "cập nhật"
+            };
+            successMessage = $"Đã {statusLabel} thành công lượt đặt sân.";
+            await LoadDataAsync();
+        }
+        else
+        {
+            errorMessage = "Cập nhật trạng thái thất bại.";
+        }
+    }
+
+    private void RequestDelete(Booking booking)
+    {
+        bookingToDelete = booking;
+    }
+
+    private void CancelDelete()
+    {
+        bookingToDelete = null;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (bookingToDelete != null)
+        {
+            var success = await BookingService.DeleteBookingAsync(bookingToDelete.Id);
+            if (success)
+            {
+                successMessage = "Xóa lượt đặt sân thành công.";
+                bookingToDelete = null;
+                await LoadDataAsync();
+            }
+            else
+            {
+                errorMessage = "Xóa lượt đặt sân thất bại.";
+                bookingToDelete = null;
+            }
+        }
+    }
+
+    private void ResetFilters()
+    {
+        selectedPitchId = 0;
+        selectedStatus = -1;
+        searchTerm = "";
+    }
+}

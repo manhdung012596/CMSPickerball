@@ -1,0 +1,93 @@
+@inject SoccerPitchMvc.Services.ToastService ToastService
+@implements IDisposable
+
+<div class="toast-container-fixed">
+    @foreach (var toast in activeToasts)
+    {
+        <div class="toast-item border-start border-4 @GetBorderClass(toast.Type)" role="alert">
+            <div class="d-flex align-items-center p-3">
+                <div class="fs-4 me-3">
+                    @((MarkupString)GetIcon(toast.Type))
+                </div>
+                <div class="flex-grow-1 text-dark fw-medium">
+                    @toast.Message
+                </div>
+                <button type="button" class="btn-close ms-2" @onclick="() => RemoveToast(toast.Id)" aria-label="Close"></button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<ToastModel> activeToasts = new();
+
+    protected override void OnInitialized()
+    {
+        ToastService.OnToastRequested += HandleToastRequest;
+    }
+
+    private void HandleToastRequest(string message, string type)
+    {
+        var newToast = new ToastModel
+        {
+            Id = Guid.NewGuid(),
+            Message = message,
+            Type = type
+        };
+        activeToasts.Add(newToast);
+        InvokeAsync(StateHasChanged);
+
+        // Auto remove after 4 seconds
+        var timer = new System.Timers.Timer(4000);
+        timer.Elapsed += (sender, e) =>
+        {
+            RemoveToast(newToast.Id);
+            timer.Dispose();
+        };
+        timer.Start();
+    }
+
+    private void RemoveToast(Guid id)
+    {
+        var toast = activeToasts.FirstOrDefault(t => t.Id == id);
+        if (toast != null)
+        {
+            activeToasts.Remove(toast);
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private string GetBorderClass(string type)
+    {
+        return type switch
+        {
+            "success" => "border-success bg-success-subtle",
+            "danger" => "border-danger bg-danger-subtle",
+            "warning" => "border-warning bg-warning-subtle",
+            _ => "border-info bg-info-subtle"
+        };
+    }
+
+    private string GetIcon(string type)
+    {
+        return type switch
+        {
+            "success" => "<i class='bi bi-check-circle-fill text-success'></i>",
+            "danger" => "<i class='bi bi-exclamation-octagon-fill text-danger'></i>",
+            "warning" => "<i class='bi bi-exclamation-triangle-fill text-warning'></i>",
+            _ => "<i class='bi bi-info-circle-fill text-info'></i>"
+        };
+    }
+
+    public void Dispose()
+    {
+        ToastService.OnToastRequested -= HandleToastRequest;
+    }
+
+    private class ToastModel
+    {
+        public Guid Id { get; set; }
+        public string Message { get; set; } = "";
+        public string Type { get; set; } = "info";
+    }
+}

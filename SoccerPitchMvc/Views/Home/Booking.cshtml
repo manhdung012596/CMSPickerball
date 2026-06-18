@@ -1,0 +1,693 @@
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = "Đặt sân Pickleball";
+}
+
+@section Styles {
+    <style>
+        .page-header-banner {
+            background-color: var(--dark-slate);
+            padding: 50px 0;
+            color: #ffffff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            text-align: center;
+        }
+
+        .page-title {
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+
+        .breadcrumb-custom {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .breadcrumb-custom a {
+            color: var(--lime-bright);
+            text-decoration: none;
+        }
+
+        .section-padding {
+            padding: 60px 0;
+        }
+
+        /* Booking Container Layout */
+        .booking-step-card {
+            background: #ffffff;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            padding: 30px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 30px;
+        }
+
+        .step-num-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .step-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: var(--lime-green);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .step-title-text {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--dark-slate);
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* Calendar slider */
+        .calendar-header-slider {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-month-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark-slate);
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .calendar-nav-btn {
+            background: none;
+            border: 1px solid var(--border-color);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            color: var(--dark-slate);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .calendar-nav-btn:hover {
+            background-color: var(--lime-green);
+            color: #ffffff;
+            border-color: var(--lime-green);
+        }
+
+        .week-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+        }
+
+        .day-cell {
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 12px 5px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            background-color: #f8fafc;
+        }
+
+        .day-cell.active {
+            background-color: var(--dark-slate);
+            color: #ffffff;
+            border-color: var(--dark-slate);
+        }
+
+        .day-name {
+            font-size: 12px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .day-cell.active .day-name {
+            color: var(--lime-bright);
+        }
+
+        .day-num {
+            font-size: 18px;
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+            margin-bottom: 8px;
+        }
+
+        .day-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin: 0 auto;
+        }
+
+        .day-status-dot.available {
+            background-color: var(--lime-green);
+        }
+
+        .day-status-dot.full {
+            background-color: #ef4444;
+        }
+
+        /* Court Selector Pills */
+        .courts-pill-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .court-pill-btn {
+            background-color: #f8fafc;
+            border: 1px solid var(--border-color);
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            color: #475569;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+        }
+
+        .court-pill-btn:hover {
+            border-color: var(--lime-green);
+            color: var(--lime-green);
+        }
+
+        .court-pill-btn.active {
+            background-color: var(--lime-green);
+            color: #ffffff;
+            border-color: var(--lime-green);
+            box-shadow: 0 4px 12px rgba(132,204,22,0.25);
+        }
+
+        /* Timeslot Grid */
+        .time-slots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 15px;
+        }
+
+        .time-slot-box {
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            background-color: #ffffff;
+        }
+
+        .time-slot-box.available {
+            border-left: 4px solid var(--lime-green);
+        }
+
+        .time-slot-box.booked {
+            border-left: 4px solid #ef4444;
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .time-slot-box.active {
+            background-color: var(--dark-slate);
+            color: #ffffff;
+            border-color: var(--dark-slate);
+            border-left-width: 4px;
+        }
+
+        .time-slot-val {
+            font-size: 16px;
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .time-slot-lbl {
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .time-slot-box.available .time-slot-lbl {
+            color: #4d7c0f;
+        }
+
+        .time-slot-box.booked .time-slot-lbl {
+            color: #b91c1c;
+        }
+
+        .time-slot-box.active .time-slot-lbl {
+            color: var(--lime-bright);
+        }
+
+        /* Sidebar summary receipt */
+        .summary-receipt-card {
+            background-color: var(--dark-slate);
+            color: #ffffff;
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(15, 23, 42, 0.15);
+            position: sticky;
+            top: 110px;
+        }
+
+        .receipt-header {
+            font-size: 20px;
+            font-weight: 800;
+            color: #ffffff;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            font-family: 'Outfit', sans-serif;
+            letter-spacing: -0.5px;
+        }
+
+        .receipt-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .receipt-lbl {
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .receipt-val {
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .receipt-val.highlight {
+            color: var(--lime-bright);
+        }
+
+        .receipt-divider {
+            border-top: 1px dashed rgba(255,255,255,0.1);
+            margin: 20px 0;
+        }
+
+        .receipt-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .total-price-val {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--lime-bright);
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* Form client info inputs */
+        .form-label-booking {
+            font-size: 12px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .form-control-booking {
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 10px 15px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: var(--transition-smooth);
+        }
+
+        .form-control-booking:focus {
+            border-color: var(--lime-green);
+            box-shadow: 0 0 0 3px rgba(132,204,22,0.15);
+            outline: none;
+        }
+
+        .btn-submit-booking {
+            background: linear-gradient(135deg, var(--lime-green) 0%, #76b813 100%);
+            color: #ffffff;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            width: 100%;
+            border: none;
+            padding: 12px 0;
+            border-radius: 12px;
+            margin-top: 15px;
+            box-shadow: 0 4px 15px rgba(132,204,22,0.2);
+            transition: var(--transition-smooth);
+        }
+
+        .btn-submit-booking:hover {
+            background: #ffffff;
+            color: var(--dark-slate);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255,255,255,0.25);
+        }
+
+        .btn-cancel-booking {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #ffffff;
+            width: 100%;
+            padding: 12px 0;
+            border-radius: 12px;
+            font-weight: 600;
+            margin-top: 10px;
+            transition: var(--transition-smooth);
+        }
+
+        .btn-cancel-booking:hover {
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+    </style>
+}
+
+<!-- PAGE HEADER BANNER -->
+<div class="page-header-banner">
+    <div class="container">
+        <h1 class="page-title">Đặt Sân Trực Tuyến</h1>
+        <div class="breadcrumb-custom">
+            <a href="/Home/Index">Trang chủ</a>
+            <span>/</span>
+            <span>Đặt sân</span>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="container section-padding">
+    <div class="row g-4">
+        
+        <!-- Left: Booking steps selection -->
+        <div class="col-lg-8">
+            
+            <!-- Step 1: Calendar Select Date -->
+            <div class="booking-step-card">
+                <div class="step-num-title">
+                    <div class="step-circle">1</div>
+                    <div class="step-title-text">Chọn Ngày Chơi</div>
+                </div>
+                
+                <div class="calendar-header-slider">
+                    <button class="calendar-nav-btn"><i class="fa-solid fa-chevron-left"></i></button>
+                    <div class="calendar-month-name">Tháng 06 / 2026</div>
+                    <button class="calendar-nav-btn"><i class="fa-solid fa-chevron-right"></i></button>
+                </div>
+                
+                <div class="week-grid">
+                    <!-- Day cells -->
+                    <div class="day-cell" onclick="selectDate(this, 'Thứ Hai', '15/06/2026')">
+                        <div class="day-name">T2</div>
+                        <div class="day-num">15</div>
+                        <div class="day-status-dot full"></div>
+                    </div>
+                    <div class="day-cell" onclick="selectDate(this, 'Thứ Ba', '16/06/2026')">
+                        <div class="day-name">T3</div>
+                        <div class="day-num">16</div>
+                        <div class="day-status-dot available"></div>
+                    </div>
+                    <div class="day-cell" onclick="selectDate(this, 'Thứ Tư', '17/06/2026')">
+                        <div class="day-name">T4</div>
+                        <div class="day-num">17</div>
+                        <div class="day-status-dot available"></div>
+                    </div>
+                    <div class="day-cell active" onclick="selectDate(this, 'Thứ Năm', '18/06/2026')">
+                        <div class="day-name">T5</div>
+                        <div class="day-num">18</div>
+                        <div class="day-status-dot available"></div>
+                    </div>
+                    <div class="day-cell" onclick="selectDate(this, 'Thứ Sáu', '19/06/2026')">
+                        <div class="day-name">T6</div>
+                        <div class="day-num">19</div>
+                        <div class="day-status-dot available"></div>
+                    </div>
+                    <div class="day-cell" onclick="selectDate(this, 'Thứ Bảy', '20/06/2026')">
+                        <div class="day-name">T7</div>
+                        <div class="day-num">20</div>
+                        <div class="day-status-dot available"></div>
+                    </div>
+                    <div class="day-cell" onclick="selectDate(this, 'Chủ Nhật', '21/06/2026')">
+                        <div class="day-name">CN</div>
+                        <div class="day-num">21</div>
+                        <div class="day-status-dot available"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Select Court -->
+            <div class="booking-step-card">
+                <div class="step-num-title">
+                    <div class="step-circle">2</div>
+                    <div class="step-title-text">Chọn Sân</div>
+                </div>
+                
+                <div class="courts-pill-grid">
+                    <button class="court-pill-btn active" onclick="selectCourt(this, 'Sân A', 'Sân 5 người', 130000)">Sân A (Sân 5 người)</button>
+                    <button class="court-pill-btn" onclick="selectCourt(this, 'Sân B', 'Sân 5 người', 130000)">Sân B (Sân 5 người)</button>
+                    <button class="court-pill-btn" onclick="selectCourt(this, 'Sân C', 'Sân 7 người', 130000)">Sân C (Sân 7 người)</button>
+                    <button class="court-pill-btn" onclick="selectCourt(this, 'Sân D', 'Sân 7 người', 130000)">Sân D (Sân 7 người)</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Select Time slot -->
+            <div class="booking-step-card">
+                <div class="step-num-title">
+                    <div class="step-circle">3</div>
+                    <div class="step-title-text">Chọn Giờ Chơi</div>
+                </div>
+                
+                <div class="time-slots-grid">
+                    <!-- Available -->
+                    <div class="time-slot-box available" onclick="selectTime(this, '06:00 - 07:00')">
+                        <div class="time-slot-val">06:00</div>
+                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Trống</div>
+                    </div>
+                    <div class="time-slot-box available" onclick="selectTime(this, '07:00 - 08:00')">
+                        <div class="time-slot-val">07:00</div>
+                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Trống</div>
+                    </div>
+                    <!-- Booked -->
+                    <div class="time-slot-box booked">
+                        <div class="time-slot-val">08:00</div>
+                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Kín</div>
+                    </div>
+                    <div class="time-slot-box available" onclick="selectTime(this, '09:00 - 10:00')">
+                        <div class="time-slot-val">09:00</div>
+                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Trống</div>
+                    </div>
+                    <div class="time-slot-box available" onclick="selectTime(this, '10:00 - 11:00')">
+                        <div class="time-slot-val">10:00</div>
+                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Trống</div>
+                    </div>
+                    <div class="time-slot-box available" onclick="selectTime(this, '11:00 - 12:00')">
+                        <div class="time-slot-val">11:00</div>
+                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Trống</div>
+                    </div>
+                    <div class="time-slot-box available" onclick="selectTime(this, '12:00 - 13:00')">
+                        <div class="time-slot-val">12:00</div>
+                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Trống</div>
+                    </div>
+                    <div class="time-slot-box available" onclick="selectTime(this, '13:00 - 14:00')">
+                        <div class="time-slot-val">13:00</div>
+                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Trống</div>
+                    </div>
+                    <div class="time-slot-box available" onclick="selectTime(this, '14:00 - 15:00')">
+                        <div class="time-slot-val">14:00</div>
+                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Trống</div>
+                    </div>
+                    <div class="time-slot-box booked">
+                        <div class="time-slot-val">15:00</div>
+                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Kín</div>
+                    </div>
+                    <div class="time-slot-box available" onclick="selectTime(this, '16:00 - 17:00')">
+                        <div class="time-slot-val">16:00</div>
+                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Trống</div>
+                    </div>
+                    <div class="time-slot-box available" onclick="selectTime(this, '17:00 - 18:00')">
+                        <div class="time-slot-val">17:00</div>
+                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Trống</div>
+                    </div>
+                    <!-- Selected / Active -->
+                    <div class="time-slot-box available active" onclick="selectTime(this, '18:00 - 19:00')">
+                        <div class="time-slot-val">18:00</div>
+                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Trống</div>
+                    </div>
+                    <div class="time-slot-box booked">
+                        <div class="time-slot-val">19:00</div>
+                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Kín</div>
+                    </div>
+                    <div class="time-slot-box available" onclick="selectTime(this, '20:00 - 21:00')">
+                        <div class="time-slot-val">20:00</div>
+                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Trống</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right: Booking Form & Receipt Summary -->
+        <div class="col-lg-4">
+            <div class="summary-receipt-card">
+                <h3 class="receipt-header">Thông tin đặt sân</h3>
+                
+                <div class="receipt-row">
+                    <span class="receipt-lbl">Sân chọn:</span>
+                    <span class="receipt-val" id="summary-court">Sân A - Sân 5 người</span>
+                </div>
+                <div class="receipt-row">
+                    <span class="receipt-lbl">Ngày chơi:</span>
+                    <span class="receipt-val" id="summary-date">Thứ Năm, 18/06/2026</span>
+                </div>
+                <div class="receipt-row">
+                    <span class="receipt-lbl">Giờ chơi:</span>
+                    <span class="receipt-val" id="summary-time">18:00 - 19:00</span>
+                </div>
+                <div class="receipt-row">
+                    <span class="receipt-lbl">Giá cơ bản:</span>
+                    <span class="receipt-val" id="summary-base-price">130.000 VNĐ</span>
+                </div>
+                
+                <div class="receipt-divider"></div>
+                
+                <!-- Customer info inputs -->
+                <form id="bookingForm" onsubmit="submitBooking(); return false;">
+                    <div class="mb-3">
+                        <label class="form-label-booking">Họ tên khách hàng *</label>
+                        <input type="text" class="form-control form-control-booking w-100" id="custName" required placeholder="Nhập họ và tên..." />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label-booking">Số điện thoại *</label>
+                        <input type="tel" class="form-control form-control-booking w-100" id="custPhone" required placeholder="Nhập số điện thoại..." />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label-booking">Địa chỉ Email</label>
+                        <input type="email" class="form-control form-control-booking w-100" id="custEmail" placeholder="Nhập email (không bắt buộc)..." />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label-booking">Ghi chú thêm</label>
+                        <textarea class="form-control form-control-booking w-100" id="custNotes" rows="2" placeholder="Ví dụ: Thuê thêm vợt, nước..."></textarea>
+                    </div>
+                    
+                    <div class="receipt-divider"></div>
+                    
+                    <div class="receipt-total mb-4">
+                        <span class="receipt-lbl text-white fw-bold">Tổng thanh toán:</span>
+                        <span class="total-price-val" id="summary-total-price">130.000 VNĐ</span>
+                    </div>
+                    
+                    <button type="submit" class="btn-submit-booking"><i class="fa-solid fa-circle-check me-2"></i>Xác nhận đặt sân</button>
+                    <button type="reset" class="btn-cancel-booking" onclick="resetForm()"><i class="fa-solid fa-circle-xmark me-2"></i>Hủy</button>
+                </form>
+            </div>
+        </div>
+        
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let selectedDateText = "Thứ Năm, 18/06/2026";
+        let selectedCourtText = "Sân A - Sân 5 người";
+        let selectedTimeText = "18:00 - 19:00";
+        let courtPrice = 130000;
+
+        function selectDate(element, dayName, dateStr) {
+            // Remove active from all days
+            document.querySelectorAll('.day-cell').forEach(cell => cell.classList.remove('active'));
+            // Add active to selected
+            element.classList.add('active');
+            
+            selectedDateText = `${dayName}, ${dateStr}`;
+            updateSummary();
+        }
+
+        function selectCourt(element, courtName, capacityStr, price) {
+            // Remove active from all courts
+            document.querySelectorAll('.court-pill-btn').forEach(btn => btn.classList.remove('active'));
+            // Add active to selected
+            element.classList.add('active');
+            
+            selectedCourtText = `${courtName} - ${capacityStr}`;
+            courtPrice = price;
+            updateSummary();
+        }
+
+        function selectTime(element, timeRange) {
+            // Remove active from all available slots
+            document.querySelectorAll('.time-slot-box.available').forEach(box => box.classList.remove('active'));
+            // Add active to selected
+            element.classList.add('active');
+            
+            selectedTimeText = timeRange;
+            updateSummary();
+        }
+
+        function updateSummary() {
+            document.getElementById('summary-court').innerText = selectedCourtText;
+            document.getElementById('summary-date').innerText = selectedDateText;
+            document.getElementById('summary-time').innerText = selectedTimeText;
+            
+            let priceFormatted = courtPrice.toLocaleString('vi-VN') + ' VNĐ';
+            document.getElementById('summary-base-price').innerText = priceFormatted;
+            document.getElementById('summary-total-price').innerText = priceFormatted;
+        }
+
+        function submitBooking() {
+            const name = document.getElementById('custName').value.trim();
+            const phone = document.getElementById('custPhone').value.trim();
+            if (!name || !phone) {
+                alert('Vui lòng điền các trường bắt buộc (*)');
+                return;
+            }
+            
+            alert(`🎉 Đặt sân thành công!\n\nThông tin chi tiết:\n- Sân: ${selectedCourtText}\n- Thời gian: ${selectedTimeText} ngày ${selectedDateText}\n- Khách hàng: ${name} (${phone})\n\nChúng tôi đã lưu thông tin và sẽ liên hệ lại với bạn sớm nhất.`);
+            resetForm();
+        }
+
+        function resetForm() {
+            document.getElementById('bookingForm').reset();
+            // Reset selectors to default active states
+            // Day 18
+            document.querySelectorAll('.day-cell').forEach((cell, idx) => {
+                if (idx === 3) cell.classList.add('active');
+                else cell.classList.remove('active');
+            });
+            // Court A
+            document.querySelectorAll('.court-pill-btn').forEach((btn, idx) => {
+                if (idx === 0) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+            // Slot 18:00
+            document.querySelectorAll('.time-slot-box.available').forEach((box) => {
+                if (box.querySelector('.time-slot-val').innerText === "18:00") box.classList.add('active');
+                else box.classList.remove('active');
+            });
+            
+            selectedDateText = "Thứ Năm, 18/06/2026";
+            selectedCourtText = "Sân A - Sân 5 người";
+            selectedTimeText = "18:00 - 19:00";
+            courtPrice = 130000;
+            updateSummary();
+        }
+    </script>
+}

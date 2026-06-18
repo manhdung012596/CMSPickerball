@@ -1,0 +1,272 @@
+@page "/admin/shop/inventory"
+@layout AdminLayout
+@using SoccerPitchMvc.Models
+@using SoccerPitchMvc.Services
+@inject IShopService ShopService
+@inject ToastService Toast
+
+<PageTitle>Quản lý Tồn kho - Shop</PageTitle>
+
+<div class="page-header d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h1 class="page-title"><i class="fa-solid fa-boxes-stacked me-2 text-primary"></i>Kiểm soát Tồn kho</h1>
+        <p class="text-muted mb-0">Theo dõi số lượng hàng hóa trong kho, nhận cảnh báo sắp hết hàng để kịp thời nhập thêm</p>
+    </div>
+    <a href="/admin/shop/imports" class="btn btn-outline-primary px-3">
+        <i class="fa-solid fa-truck-loading me-1"></i> Đến trang Nhập hàng
+    </a>
+</div>
+
+<!-- Stats row -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100 card-hover">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-primary bg-opacity-10 p-3">
+                    <i class="fa-solid fa-box fa-lg text-primary"></i>
+                </div>
+                <div>
+                    <div class="small text-muted fw-semibold">Số loại mặt hàng</div>
+                    <div class="fs-3 fw-bold text-primary">@Products.Count</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100 card-hover">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-info bg-opacity-10 p-3">
+                    <i class="fa-solid fa-calculator fa-lg text-info"></i>
+                </div>
+                <div>
+                    <div class="small text-muted fw-semibold">Tổng số lượng tồn</div>
+                    <div class="fs-3 fw-bold text-info">@Products.Sum(p => p.StockQuantity).ToString("N0")</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100 card-hover">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-warning bg-opacity-10 p-3">
+                    <i class="fa-solid fa-triangle-exclamation fa-lg text-warning"></i>
+                </div>
+                <div>
+                    <div class="small text-muted fw-semibold">Sắp hết hàng</div>
+                    <div class="fs-3 fw-bold text-warning">@Products.Count(p => p.StockQuantity > 0 && p.StockQuantity < 10)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100 card-hover">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-danger bg-opacity-10 p-3">
+                    <i class="fa-solid fa-circle-exclamation fa-lg text-danger"></i>
+                </div>
+                <div>
+                    <div class="small text-muted fw-semibold">Hết hàng trong kho</div>
+                    <div class="fs-3 fw-bold text-danger">@Products.Count(p => p.StockQuantity <= 0)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-3">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-search"></i></span>
+                    <input type="text" class="form-control border-start-0" placeholder="Tìm sản phẩm theo tên hoặc SKU..."
+                           @bind-value="SearchText" @bind-value:event="oninput" />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <select class="form-select" @bind="FilterStockLevel">
+                    <option value="all">Tất cả mức tồn kho</option>
+                    <option value="ok">Tồn kho đầy đủ (>= 10)</option>
+                    <option value="low">Sắp hết hàng (&lt; 10)</option>
+                    <option value="empty">Đã hết hàng (0)</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-outline-secondary w-100" @onclick="ResetFilters">
+                    <i class="fas fa-undo me-1"></i>Làm mới
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Inventory Warning Alert Banner -->
+@if (Products.Any(p => p.StockQuantity < 10 && p.Status == 1))
+{
+    <div class="alert alert-warning border-0 shadow-sm mb-4 d-flex align-items-center gap-3">
+        <i class="fa-solid fa-bell-exclamation fa-2x text-warning"></i>
+        <div>
+            <strong class="text-dark">Cảnh báo tồn kho thấp!</strong>
+            <div>Có <strong>@Products.Count(p => p.StockQuantity < 10 && p.Status == 1)</strong> mặt hàng đang kinh doanh có số lượng tồn kho dưới mức tối thiểu (10 sản phẩm). Vui lòng lên kế hoạch nhập hàng thêm.</div>
+        </div>
+    </div>
+}
+
+<!-- Table list -->
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        @if (IsLoading)
+        {
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <div class="mt-2 text-muted">Đang tải báo cáo tồn kho...</div>
+            </div>
+        }
+        else if (!FilteredList.Any())
+        {
+            <div class="text-center py-5">
+                <i class="fa-solid fa-warehouse fa-3x text-muted mb-3 d-block"></i>
+                <p class="text-muted">Không tìm thấy bản ghi tồn kho nào phù hợp.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="40">#</th>
+                            <th>Mã SKU</th>
+                            <th>Tên sản phẩm</th>
+                            <th>Danh mục</th>
+                            <th class="text-end">Giá bán</th>
+                            <th class="text-center">ĐVT</th>
+                            <th class="text-center" width="180">Mức tồn kho</th>
+                            <th class="text-center" width="150">Số lượng tồn</th>
+                            <th class="text-center">Trạng thái kho</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var (prod, idx) in FilteredList.Select((p, i) => (p, i + 1)))
+                        {
+                            <tr>
+                                <td class="text-muted fw-semibold small">@idx</td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(prod.SKU))
+                                    {
+                                        <span class="badge bg-secondary font-monospace">@prod.SKU</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">—</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="fw-bold text-dark">@prod.Name</div>
+                                </td>
+                                <td>@prod.CategoryName</td>
+                                <td class="text-end fw-semibold text-success">@prod.SellingPrice.ToString("N0")đ</td>
+                                <td class="text-center">@prod.UnitName</td>
+                                <td class="px-3">
+                                    @{
+                                        int pct = GetStockPercent(prod.StockQuantity);
+                                        string colorClass = GetStockProgressBarColor(prod.StockQuantity);
+                                    }
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar @colorClass" role="progressbar" 
+                                             style="width: @(pct)%;" aria-valuenow="@prod.StockQuantity" 
+                                             aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </td>
+                                <td class="text-center fw-bold fs-5">
+                                    <span class="@(prod.StockQuantity <= 0 ? "text-danger" : (prod.StockQuantity < 10 ? "text-warning" : "text-dark"))">
+                                        @prod.StockQuantity
+                                    </span>
+                                    <span class="text-muted small fs-6 fw-normal ms-1">@prod.UnitSymbol</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge @prod.StockStatusBadge">@prod.StockStatus</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer bg-light text-muted small">
+                Hiển thị <strong>@FilteredList.Count</strong> / @Products.Count sản phẩm trong báo cáo
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .card-hover:hover {
+        transform: translateY(-2px);
+        transition: transform 0.2s ease-in-out;
+    }
+</style>
+
+@code {
+    private List<ProductListDto> Products = new();
+    private bool IsLoading = true;
+    private string SearchText = string.Empty;
+    private string FilterStockLevel = "all";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        IsLoading = true;
+        Products = await ShopService.GetProductsAsync();
+        IsLoading = false;
+    }
+
+    private List<ProductListDto> FilteredList
+    {
+        get
+        {
+            var q = Products.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                var txt = SearchText.Trim().ToLower();
+                q = q.Where(p => p.Name.ToLower().Contains(txt) || (p.SKU != null && p.SKU.ToLower().Contains(txt)));
+            }
+
+            q = FilterStockLevel switch
+            {
+                "ok" => q.Where(p => p.StockQuantity >= 10),
+                "low" => q.Where(p => p.StockQuantity > 0 && p.StockQuantity < 10),
+                "empty" => q.Where(p => p.StockQuantity <= 0),
+                _ => q
+            };
+
+            return q.ToList();
+        }
+    }
+
+    private void ResetFilters()
+    {
+        SearchText = string.Empty;
+        FilterStockLevel = "all";
+    }
+
+    // Returns a stock representation percentage up to 100
+    private int GetStockPercent(int stock)
+    {
+        if (stock <= 0) return 0;
+        if (stock >= 50) return 100;
+        return (stock * 100) / 50; // Max 50 as full bar visual scale
+    }
+
+    private string GetStockProgressBarColor(int stock)
+    {
+        if (stock <= 0) return "bg-danger";
+        if (stock < 10) return "bg-warning";
+        return "bg-success";
+    }
+}

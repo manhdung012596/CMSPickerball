@@ -1,0 +1,105 @@
+@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+
+<div id="wrapper" class="@(isToggled ? "toggled" : "")">
+    <!-- Sidebar -->
+    <div id="sidebar-wrapper">
+        <div class="sidebar-heading d-flex align-items-center gap-2">
+            <i class="fa-solid fa-table-tennis-paddle-ball text-success fs-3"></i>
+            <span>Pickleball CMS</span>
+        </div>
+        <MainMenu />
+        
+        <div class="p-3 border-top border-secondary text-center small text-muted">
+            &copy; 2026 Pickleball CMS
+        </div>
+    </div>
+    <!-- /#sidebar-wrapper -->
+
+    <!-- Page Content -->
+    <div id="page-content-wrapper">
+        <!-- Header -->
+        <nav class="navbar navbar-expand-lg navbar-light navbar-admin d-flex justify-content-between align-items-center shadow-sm">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-outline-secondary btn-sm border-0" @onclick="ToggleMenu">
+                    <i class="bi bi-list fs-4"></i>
+                </button>
+                <!-- Breadcrumbs -->
+                <nav aria-label="breadcrumb" class="d-none d-md-inline-block">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="/admin/dashboard" class="text-decoration-none text-muted">Trang chủ</a></li>
+                        <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">CMS Admin Panel</li>
+                    </ol>
+                </nav>
+            </div>
+
+            <div class="d-flex align-items-center gap-3">
+                <!-- Search Box -->
+                <div class="d-none d-sm-flex position-relative">
+                    <input type="text" class="form-control form-control-sm pe-5 rounded-pill" placeholder="Tìm kiếm nhanh..." style="width: 200px;" />
+                    <button class="btn btn-sm position-absolute end-0 top-0 border-0 h-100 rounded-pill"><i class="bi bi-search text-muted"></i></button>
+                </div>
+
+                <!-- Notifications Dropdown -->
+                <div class="dropdown">
+                    <button class="btn btn-light btn-sm rounded-circle position-relative border" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-bell"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-2" style="width: 280px;">
+                        <li><h6 class="dropdown-header">Thông báo mới</h6></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item py-2" href="#">
+                                <div class="fw-semibold text-dark small">Đặt sân mới #12</div>
+                                <div class="text-muted small">Khách hàng Nguyễn Văn A vừa đặt sân A</div>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Language Switcher -->
+                <div class="dropdown">
+                    <button class="btn btn-light btn-sm dropdown-toggle border" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-translate"></i> VI
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                        <li><a class="dropdown-item" href="#"><span class="fw-bold">VI</span> - Tiếng Việt</a></li>
+                        <li><a class="dropdown-item" href="#"><span class="fw-bold">EN</span> - English</a></li>
+                    </ul>
+                </div>
+
+                <!-- User Profile -->
+                <div class="dropdown">
+                    <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle text-dark" data-bs-toggle="dropdown" aria-expanded="false">
+                        <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&h=80&q=80" alt="avatar" class="rounded-circle border" width="36" height="36" />
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-2">
+                        <li><div class="px-3 py-1 fw-bold text-dark">Admin User</div></li>
+                        <li><div class="px-3 pb-2 text-muted small">admin@pickleball.com</div></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-person"></i> Hồ sơ</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-box-arrow-right"></i> Đăng xuất</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content Container -->
+        <div class="container-fluid p-4">
+            <main role="main" class="pb-3">
+                @Body
+            </main>
+        </div>
+    </div>
+    <ToastContainer />
+</div>
+
+@code {
+    private bool isToggled = false;
+
+    private void ToggleMenu()
+    {
+        isToggled = !isToggled;
+    }
+}

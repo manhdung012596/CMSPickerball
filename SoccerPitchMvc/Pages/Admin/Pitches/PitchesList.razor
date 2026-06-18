@@ -1,0 +1,181 @@
+@page "/admin/pitches"
+@layout AdminLayout
+@inject SoccerPitchMvc.Services.IPitchService PitchService
+@inject NavigationManager NavigationManager
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold text-dark mb-1"><i class="bi bi-dribbble text-success"></i> Quản lý Sân Pickleball</h2>
+            <p class="text-muted">Danh sách và trạng thái hoạt động của các sân Pickleball</p>
+        </div>
+        <button class="btn btn-success btn-lg shadow-sm" @onclick="NavigateToCreate">
+            <i class="bi bi-plus-lg"></i> Thêm Sân Mới
+        </button>
+    </div>
+
+    @if (errorMessage != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill"></i> @errorMessage
+            <button type="button" class="btn-close" @onclick="() => errorMessage = null" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (successMessage != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill"></i> @successMessage
+            <button type="button" class="btn-close" @onclick="() => successMessage = null" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="py-3 px-4">Tên sân</th>
+                            <th class="py-3">Giá thuê/giờ</th>
+                            <th class="py-3">Trạng thái</th>
+                            <th class="py-3">Ngày tạo</th>
+                            <th class="py-3 text-end px-4">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (pitches == null)
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">
+                                    <div class="spinner-border text-success" role="status">
+                                        <span class="visually-hidden">Đang tải...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else if (!pitches.Any())
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox-fill display-4 d-block mb-3 text-secondary"></i>
+                                    Chưa có sân Pickleball nào được tạo.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var pitch in pitches)
+                            {
+                                <tr>
+                                    <td class="fw-bold text-dark py-3 px-4">@pitch.Name</td>
+                                    <td class="fw-semibold text-success">130,000 VNĐ</td>
+                                    <td>
+                                        @if (pitch.Status == 0)
+                                        {
+                                            <span class="badge bg-success"><i class="bi bi-check-circle-fill"></i> Đang hoạt động</span>
+                                        }
+                                        else if (pitch.Status == 1)
+                                        {
+                                            <span class="badge bg-warning text-dark"><i class="bi bi-cone-striped"></i> Bảo trì</span>
+                                        }
+                                    </td>
+                                    <td class="text-muted">@pitch.CreatedDate.ToString("dd/MM/yyyy")</td>
+                                    <td class="text-end px-4">
+                                        <div class="btn-group shadow-sm">
+                                            <button class="btn btn-outline-primary btn-sm" @onclick="() => EditPitch(pitch.Id)">
+                                                <i class="bi bi-pencil-square"></i> Sửa
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm" @onclick="() => RequestDelete(pitch)">
+                                                <i class="bi bi-trash-fill"></i> Xóa
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Simple custom Blazor modal for Delete Confirmation -->
+@if (pitchToDelete != null)
+{
+    <div class="modal-backdrop fade show"></div>
+    <div class="modal fade show d-block" tabindex="-1" style="z-index: 1050;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle-fill"></i> Xác nhận xóa sân</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CancelDelete" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-start py-4">
+                    Bạn có chắc chắn muốn xóa sân Pickleball <strong class="text-danger">@pitchToDelete.Name</strong> không? Hành động này sẽ ẩn sân khỏi danh sách hoạt động.
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-secondary" @onclick="CancelDelete">Hủy bỏ</button>
+                    <button type="button" class="btn btn-danger px-4" @onclick="ConfirmDelete">Đồng ý xóa</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Pitch>? pitches;
+    private Pitch? pitchToDelete;
+    private string? errorMessage;
+    private string? successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPitchesAsync();
+    }
+
+    private async Task LoadPitchesAsync()
+    {
+        pitches = await PitchService.GetActivePitchesAsync();
+    }
+
+    private void NavigateToCreate()
+    {
+        NavigationManager.NavigateTo("admin/pitches/create");
+    }
+
+    private void EditPitch(int id)
+    {
+        NavigationManager.NavigateTo($"admin/pitches/edit/{id}");
+    }
+
+    private void RequestDelete(Pitch pitch)
+    {
+        pitchToDelete = pitch;
+    }
+
+    private void CancelDelete()
+    {
+        pitchToDelete = null;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (pitchToDelete != null)
+        {
+            var success = await PitchService.DeletePitchAsync(pitchToDelete.Id);
+            if (success)
+            {
+                successMessage = $"Đã xóa thành công sân '{pitchToDelete.Name}'.";
+                pitchToDelete = null;
+                await LoadPitchesAsync();
+            }
+            else
+            {
+                errorMessage = "Có lỗi xảy ra khi thực hiện xóa sân.";
+                pitchToDelete = null;
+            }
+        }
+    }
+}

@@ -1,0 +1,287 @@
+@page "/admin/pitches/timeslots"
+@layout AdminLayout
+@inject SoccerPitchMvc.Services.IPitchService PitchService
+@inject NavigationManager NavigationManager
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold text-dark mb-1"><i class="fa-solid fa-clock text-success"></i> Quản lý Khung Giờ</h2>
+            <p class="text-muted">Cấu hình khung giờ và giá thuê cao điểm cho từng sân Pickleball</p>
+        </div>
+    </div>
+
+    @if (errorMessage != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill"></i> @errorMessage
+            <button type="button" class="btn-close" @onclick="() => errorMessage = null" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (successMessage != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill"></i> @successMessage
+            <button type="button" class="btn-close" @onclick="() => successMessage = null" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <!-- Pitch Selector & Add TimeSlot Form -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 rounded-3 mb-4">
+                <div class="card-header bg-success text-white py-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-funnel-fill"></i> Chọn Sân & Thêm Mới</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark">Sân Pickleball</label>
+                        <select class="form-select" @onchange="OnPitchSelected">
+                            <option value="">-- Chọn Sân Pickleball --</option>
+                            @if (pitches != null)
+                            {
+                                @foreach (var p in pitches)
+                                {
+                                    <option value="@p.Id" selected="@(selectedPitchId == p.Id)">@p.Name</option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    @if (selectedPitchId > 0)
+                    {
+                        <hr />
+                        <h6 class="fw-bold text-dark mb-3"><i class="bi bi-plus-circle-fill text-success"></i> Thêm Khung Giờ Mới</h6>
+                        <form @onSubmit="HandleCreateSlot">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Giờ Bắt Đầu</label>
+                                <input type="time" class="form-control" value="@startTimeStr" @onchange="@(e => startTimeStr = e.Value?.ToString() ?? "08:00")" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Giờ Kết Thúc</label>
+                                <input type="time" class="form-control" value="@endTimeStr" @onchange="@(e => endTimeStr = e.Value?.ToString() ?? "09:00")" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Giá Thuê Cao Điểm (Ghi đè - VNĐ/giờ)</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" @bind="newSlot.PriceOverride" placeholder="Bỏ trống nếu dùng giá mặc định" />
+                                    <span class="input-group-text">đ</span>
+                                </div>
+                                <small class="text-muted">Bỏ trống để áp dụng giá chuẩn 130,000đ/giờ</small>
+                            </div>
+                            <button type="submit" class="btn btn-success w-100 py-2 fw-semibold">
+                                <i class="bi bi-plus-lg"></i> Thêm Khung Giờ
+                            </button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- TimeSlots Grid -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-header bg-white py-3">
+                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-table text-success"></i> Danh sách Khung giờ của Sân</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped align-middle mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th class="py-3 px-4">Giờ Bắt Đầu</th>
+                                    <th class="py-3">Giờ Kết Thúc</th>
+                                    <th class="py-3">Giá Thuê / Giờ</th>
+                                    <th class="py-3 text-end px-4">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (selectedPitchId == 0)
+                                {
+                                    <tr>
+                                        <td colspan="4" class="text-center py-5 text-muted">
+                                            <i class="bi bi-arrow-left-circle display-4 d-block mb-3 text-secondary"></i>
+                                            Vui lòng chọn sân Pickleball ở danh sách bên trái.
+                                        </td>
+                                    </tr>
+                                }
+                                else if (timeSlots == null)
+                                {
+                                    <tr>
+                                        <td colspan="4" class="text-center py-5 text-muted">
+                                            <div class="spinner-border text-success" role="status">
+                                                <span class="visually-hidden">Đang tải...</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                                else if (!timeSlots.Any())
+                                {
+                                    <tr>
+                                        <td colspan="4" class="text-center py-5 text-muted">
+                                            Chưa có khung giờ nào được tạo cho sân này.
+                                        </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    @foreach (var slot in timeSlots)
+                                    {
+                                        <tr>
+                                            <td class="fw-bold text-dark py-3 px-4">
+                                                <span class="badge bg-primary fs-6">@FormatTime(slot.StartTime)</span>
+                                            </td>
+                                            <td class="fw-bold text-dark">
+                                                <span class="badge bg-secondary fs-6">@FormatTime(slot.EndTime)</span>
+                                            </td>
+                                            <td class="fw-semibold @(slot.PriceOverride.HasValue ? "text-danger" : "text-success")">
+                                                @(slot.PriceOverride.HasValue ? slot.PriceOverride.Value.ToString("N0") + " VNĐ (Cao điểm)" : "130,000 VNĐ (Mặc định)")
+                                            </td>
+                                            <td class="text-end px-4">
+                                                <button class="btn btn-outline-danger btn-sm" @onclick="() => RequestDelete(slot)">
+                                                    <i class="bi bi-trash-fill"></i> Xóa
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (slotToDelete != null)
+{
+    <div class="modal-backdrop fade show"></div>
+    <div class="modal fade show d-block" tabindex="-1" style="z-index: 1050;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle-fill"></i> Xác nhận xóa khung giờ</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CancelDelete" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-start py-4">
+                    Bạn có chắc chắn muốn xóa khung giờ <strong class="text-danger">@FormatTime(slotToDelete.StartTime) - @FormatTime(slotToDelete.EndTime)</strong> không?
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-secondary" @onclick="CancelDelete">Hủy bỏ</button>
+                    <button type="button" class="btn btn-danger px-4" @onclick="ConfirmDelete">Đồng ý xóa</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Pitch>? pitches;
+    private List<TimeSlot>? timeSlots;
+    private int selectedPitchId;
+    private SoccerPitchMvc.Models.TimeSlot newSlot = new();
+    private string startTimeStr = "08:00";
+    private string endTimeStr = "09:00";
+    private SoccerPitchMvc.Models.TimeSlot? slotToDelete;
+    private string? errorMessage;
+    private string? successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        pitches = await PitchService.GetActivePitchesAsync();
+    }
+
+    private async Task OnPitchSelected(ChangeEventArgs e)
+    {
+        string val = e.Value?.ToString() ?? "";
+        if (int.TryParse(val, out int id))
+        {
+            selectedPitchId = id;
+            await LoadTimeSlotsAsync();
+        }
+        else
+        {
+            selectedPitchId = 0;
+            timeSlots = null;
+        }
+    }
+
+    private async Task LoadTimeSlotsAsync()
+    {
+        if (selectedPitchId > 0)
+        {
+            timeSlots = await PitchService.GetTimeSlotsByPitchIdAsync(selectedPitchId);
+        }
+    }
+
+    private string FormatTime(TimeOnly time)
+    {
+        return time.ToString(@"HH\:mm");
+    }
+
+    private async Task HandleCreateSlot()
+    {
+        errorMessage = null;
+        successMessage = null;
+
+        if (TimeOnly.TryParse(startTimeStr, out TimeOnly start) && TimeOnly.TryParse(endTimeStr, out TimeOnly end))
+        {
+            if (start >= end)
+            {
+                errorMessage = "Giờ kết thúc phải lớn hơn giờ bắt đầu.";
+                return;
+            }
+
+            newSlot.PitchId = selectedPitchId;
+            newSlot.StartTime = start;
+            newSlot.EndTime = end;
+
+            var success = await PitchService.CreateTimeSlotAsync(newSlot);
+            if (success)
+            {
+                successMessage = "Thêm khung giờ mới thành công!";
+                newSlot = new();
+                await LoadTimeSlotsAsync();
+            }
+            else
+            {
+                errorMessage = "Khung giờ này đã tồn tại trên sân.";
+            }
+        }
+        else
+        {
+            errorMessage = "Định dạng thời gian không hợp lệ.";
+        }
+    }
+
+    private void RequestDelete(TimeSlot slot)
+    {
+        slotToDelete = slot;
+    }
+
+    private void CancelDelete()
+    {
+        slotToDelete = null;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (slotToDelete != null)
+        {
+            var success = await PitchService.DeleteTimeSlotAsync(slotToDelete.Id);
+            if (success)
+            {
+                successMessage = "Đã xóa khung giờ thành công.";
+                slotToDelete = null;
+                await LoadTimeSlotsAsync();
+            }
+            else
+            {
+                errorMessage = "Lỗi khi xóa khung giờ.";
+                slotToDelete = null;
+            }
+        }
+    }
+}

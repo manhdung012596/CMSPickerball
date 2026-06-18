@@ -1,0 +1,172 @@
+@page "/admin/posts/edit/{Id:int}"
+@layout AdminLayout
+@using SoccerPitchMvc.Models
+@using SoccerPitchMvc.Services
+@inject IArticleService ArticleService
+@inject NavigationManager Navigation
+@inject ToastService Toast
+
+<PageTitle>Sửa bài viết - Quản trị</PageTitle>
+
+<div class="page-header mb-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/admin/posts">Bài viết</a></li>
+            <li class="breadcrumb-item active">Sửa bài viết</li>
+        </ol>
+    </nav>
+    <h1 class="page-title"><i class="fas fa-edit me-2 text-primary"></i>Sửa bài viết</h1>
+</div>
+
+@if (IsLoading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary"></div>
+        <p class="mt-2 text-muted">Đang tải dữ liệu...</p>
+    </div>
+}
+else if (Model == null)
+{
+    <div class="alert alert-danger">
+        <i class="fas fa-exclamation-circle me-2"></i>Không tìm thấy bài viết. <a href="/admin/posts">Quay lại danh sách</a>
+    </div>
+}
+else
+{
+    <EditForm Model="@Model" OnValidSubmit="HandleSubmit">
+        <DataAnnotationsValidator />
+        <div class="row g-4">
+            <!-- Main Content -->
+            <div class="col-lg-8">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-file-alt me-2"></i>Nội dung bài viết</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Tiêu đề <span class="text-danger">*</span></label>
+                            <InputText class="form-control form-control-lg" @bind-Value="Model.Title" placeholder="Nhập tiêu đề bài viết..." />
+                            <ValidationMessage For="@(() => Model.Title)" class="text-danger small" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Tóm tắt</label>
+                            <InputTextArea class="form-control" @bind-Value="Model.Summary" rows="3" placeholder="Mô tả ngắn về bài viết..." />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Nội dung chi tiết</label>
+                            <InputTextArea class="form-control" @bind-Value="Model.Content" rows="12" placeholder="Nhập nội dung bài viết..." style="font-family: monospace;" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Publish -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-cog me-2"></i>Xuất bản</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Trạng thái</label>
+                            <InputSelect class="form-select" @bind-Value="Model.Status">
+                                <option value="0">Nháp</option>
+                                <option value="1">Xuất bản</option>
+                                <option value="2">Ẩn</option>
+                            </InputSelect>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Tác giả</label>
+                            <InputText class="form-control" @bind-Value="Model.AuthorName" placeholder="Tên tác giả..." />
+                        </div>
+                        <div class="form-check mb-3">
+                            <InputCheckbox class="form-check-input" id="isFeatured" @bind-Value="Model.IsFeatured" />
+                            <label class="form-check-label fw-semibold" for="isFeatured">
+                                <i class="fas fa-star text-warning me-1"></i>Bài viết nổi bật
+                            </label>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary" disabled="@IsSaving">
+                                @if (IsSaving)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-1"></span>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-save me-1"></i>
+                                }
+                                Lưu thay đổi
+                            </button>
+                            <a href="/admin/posts" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i>Hủy
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-folder me-2"></i>Danh mục</h6>
+                    </div>
+                    <div class="card-body">
+                        <InputSelect class="form-select" @bind-Value="Model.CategoryId">
+                            <option value="">-- Chọn danh mục --</option>
+                            @foreach (var cat in Categories)
+                            {
+                                <option value="@cat.Id">@cat.Name</option>
+                            }
+                        </InputSelect>
+                    </div>
+                </div>
+
+                <!-- Thumbnail -->
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-image me-2"></i>Ảnh đại diện</h6>
+                    </div>
+                    <div class="card-body">
+                        <InputText class="form-control" @bind-Value="Model.ThumbnailUrl" placeholder="URL ảnh..." />
+                        @if (!string.IsNullOrEmpty(Model.ThumbnailUrl))
+                        {
+                            <div class="mt-2">
+                                <img src="@Model.ThumbnailUrl" class="img-fluid rounded" alt="preview" style="max-height:150px;object-fit:cover;" />
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private UpdateArticleDto? Model;
+    private List<ArticleCategory> Categories = new();
+    private bool IsLoading = true;
+    private bool IsSaving = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Categories = await ArticleService.GetCategorySelectListAsync();
+        Model = await ArticleService.GetArticleForEditAsync(Id);
+        IsLoading = false;
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (Model == null) return;
+        IsSaving = true;
+        var result = await ArticleService.UpdateArticleAsync(Model);
+        IsSaving = false;
+        if (result.Success)
+        {
+            Toast.ShowSuccess(result.Message);
+            Navigation.NavigateTo("/admin/posts");
+        }
+        else Toast.ShowError(result.Message);
+    }
+}

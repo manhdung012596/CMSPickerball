@@ -1,0 +1,248 @@
+@page "/admin/posts/comments"
+@layout AdminLayout
+@using SoccerPitchMvc.Models
+@using SoccerPitchMvc.Services
+@inject IArticleService ArticleService
+@inject ToastService Toast
+
+<PageTitle>Quản lý bình luận - Quản trị</PageTitle>
+
+<div class="page-header d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h1 class="page-title"><i class="fas fa-comments me-2 text-primary"></i>Quản lý bình luận</h1>
+        <p class="text-muted mb-0">Duyệt và quản lý bình luận bài viết</p>
+    </div>
+    @if (PendingCount > 0)
+    {
+        <span class="badge bg-warning text-dark fs-6 px-3 py-2">
+            <i class="fas fa-clock me-1"></i>@PendingCount bình luận chờ duyệt
+        </span>
+    }
+</div>
+
+<!-- Filters -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body py-3">
+        <div class="row g-2 align-items-center">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" class="form-control" placeholder="Tìm theo tên, nội dung..."
+                           @bind="SearchTerm" @bind:event="oninput" @onkeyup="LoadComments" />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" value="@FilterStatus"
+                        @onchange="e => { FilterStatus = e.Value?.ToString() ?? string.Empty; _ = LoadComments(); }">
+                    <option value="">-- Tất cả trạng thái --</option>
+                    <option value="0">Chờ duyệt</option>
+                    <option value="1">Đã duyệt</option>
+                    <option value="2">Spam</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-outline-secondary w-100" @onclick="ClearFilters">
+                    <i class="fas fa-times me-1"></i>Xóa lọc
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Comments Table -->
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        @if (IsLoading)
+        {
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary"></div>
+                <p class="mt-2 text-muted">Đang tải...</p>
+            </div>
+        }
+        else if (!CommentList.Any())
+        {
+            <div class="text-center py-5">
+                <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                <p class="text-muted">Không có bình luận nào.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="50">#</th>
+                            <th>Người bình luận</th>
+                            <th>Bài viết</th>
+                            <th>Nội dung</th>
+                            <th class="text-center">Trạng thái</th>
+                            <th>Ngày tạo</th>
+                            <th width="160" class="text-center">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var (comment, index) in CommentList.Select((c, i) => (c, i + 1)))
+                        {
+                            <tr class="@(comment.Status == 0 ? "table-warning" : "")">
+                                <td class="text-muted fw-semibold">@index</td>
+                                <td>
+                                    <div class="fw-semibold">@comment.AuthorName</div>
+                                    @if (!string.IsNullOrEmpty(comment.AuthorEmail))
+                                    {
+                                        <div class="text-muted small">@comment.AuthorEmail</div>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="text-primary small" style="max-width:180px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="@comment.ArticleTitle">
+                                        @comment.ArticleTitle
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="text-muted small" style="max-width:250px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="@comment.Content">
+                                        @comment.Content
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-@comment.StatusBadge">@comment.StatusText</span>
+                                </td>
+                                <td>
+                                    <span class="text-muted small">@comment.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        @if (comment.Status != 1)
+                                        {
+                                            <button class="btn btn-outline-success" title="Duyệt" @onclick="() => ApproveComment(comment.Id)">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        }
+                                        @if (comment.Status != 2)
+                                        {
+                                            <button class="btn btn-outline-warning" title="Đánh dấu Spam" @onclick="() => RejectComment(comment.Id)">
+                                                <i class="fas fa-ban"></i>
+                                            </button>
+                                        }
+                                        <button class="btn btn-outline-danger" title="Xóa" @onclick="() => ConfirmDelete(comment)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer bg-light">
+                <span class="text-muted small">Tổng: <strong>@CommentList.Count</strong> bình luận</span>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Delete Modal -->
+@if (ShowDeleteModal && CommentToDelete != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Xóa bình luận</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="() => ShowDeleteModal = false"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <p>Xác nhận xóa bình luận của <strong>@CommentToDelete.AuthorName</strong>?</p>
+                    <blockquote class="blockquote-sm bg-light p-2 rounded text-muted small">
+                        "@CommentToDelete.Content"
+                    </blockquote>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary" @onclick="() => ShowDeleteModal = false">Hủy</button>
+                    <button class="btn btn-danger" @onclick="ExecuteDelete" disabled="@IsDeleting">
+                        @if (IsDeleting) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                        Xóa bình luận
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<ArticleCommentListDto> CommentList = new();
+    private string SearchTerm = string.Empty;
+    private string FilterStatus = string.Empty;
+    private int PendingCount = 0;
+    private bool IsLoading = true;
+    private bool ShowDeleteModal = false;
+    private bool IsDeleting = false;
+    private ArticleCommentListDto? CommentToDelete;
+
+    protected override async Task OnInitializedAsync()
+    {
+        PendingCount = await ArticleService.GetPendingCommentsCountAsync();
+        await LoadComments();
+    }
+
+    private async Task LoadComments()
+    {
+        IsLoading = true;
+        int? status = int.TryParse(FilterStatus, out var s) ? s : null;
+        CommentList = await ArticleService.GetAllCommentsAsync(status, SearchTerm);
+        IsLoading = false;
+    }
+
+    private async Task ClearFilters()
+    {
+        SearchTerm = string.Empty;
+        FilterStatus = string.Empty;
+        await LoadComments();
+    }
+
+    private async Task ApproveComment(int id)
+    {
+        var result = await ArticleService.ApproveCommentAsync(id);
+        if (result.Success)
+        {
+            Toast.ShowSuccess(result.Message);
+            PendingCount = await ArticleService.GetPendingCommentsCountAsync();
+            await LoadComments();
+        }
+        else Toast.ShowError(result.Message);
+    }
+
+    private async Task RejectComment(int id)
+    {
+        var result = await ArticleService.RejectCommentAsync(id);
+        if (result.Success)
+        {
+            Toast.ShowSuccess(result.Message);
+            PendingCount = await ArticleService.GetPendingCommentsCountAsync();
+            await LoadComments();
+        }
+        else Toast.ShowError(result.Message);
+    }
+
+    private void ConfirmDelete(ArticleCommentListDto comment)
+    {
+        CommentToDelete = comment;
+        ShowDeleteModal = true;
+    }
+
+    private async Task ExecuteDelete()
+    {
+        if (CommentToDelete == null) return;
+        IsDeleting = true;
+        var result = await ArticleService.DeleteCommentAsync(CommentToDelete.Id);
+        IsDeleting = false;
+        ShowDeleteModal = false;
+        if (result.Success)
+        {
+            Toast.ShowSuccess(result.Message);
+            PendingCount = await ArticleService.GetPendingCommentsCountAsync();
+            await LoadComments();
+        }
+        else Toast.ShowError(result.Message);
+        CommentToDelete = null;
+    }
+}

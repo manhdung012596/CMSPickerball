@@ -1,0 +1,438 @@
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = "Sân bãi & Bảng giá";
+}
+
+@section Styles {
+    <style>
+        .page-header-banner {
+            background-color: var(--dark-slate);
+            padding: 50px 0;
+            color: #ffffff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            text-align: center;
+        }
+
+        .page-title {
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+
+        .breadcrumb-custom {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .breadcrumb-custom a {
+            color: var(--lime-bright);
+            text-decoration: none;
+        }
+
+        .section-padding {
+            padding: 80px 0;
+        }
+
+        .section-title-wrapper {
+            margin-bottom: 45px;
+        }
+
+        .section-title {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--dark-slate);
+            position: relative;
+            padding-bottom: 12px;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 50px;
+            height: 3px;
+            background-color: var(--lime-green);
+            border-radius: 2px;
+        }
+
+        /* Pitch cards styling */
+        .court-card-full {
+            background: #ffffff;
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+            transition: var(--transition-smooth);
+            margin-bottom: 30px;
+        }
+
+        .court-card-full:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(15, 23, 42, 0.08);
+            border-color: rgba(132, 204, 22, 0.3);
+        }
+
+        .court-img-full-wrapper {
+            position: relative;
+            height: 240px;
+            overflow: hidden;
+        }
+
+        .court-img-full {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: var(--transition-smooth);
+        }
+
+        .court-card-full:hover .court-img-full {
+            transform: scale(1.05);
+        }
+
+        .court-rating-pill {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(5px);
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 13px;
+            padding: 5px 12px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .court-capacity-pill {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(132, 204, 22, 0.95);
+            color: var(--dark-slate);
+            font-weight: 700;
+            font-size: 13px;
+            padding: 5px 12px;
+            border-radius: 50px;
+        }
+
+        .court-content-full {
+            padding: 25px;
+        }
+
+        .court-name-full {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--dark-slate);
+            margin-bottom: 8px;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .court-price-full {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--lime-green);
+            font-family: 'Outfit', sans-serif;
+            margin-bottom: 15px;
+        }
+
+        .court-price-full span {
+            font-size: 14px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .court-amenities {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .amenity-badge {
+            font-size: 12px;
+            font-weight: 600;
+            color: #475569;
+            background-color: #f1f5f9;
+            padding: 6px 12px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .amenity-badge i {
+            color: var(--lime-green);
+        }
+
+        .btn-booking-full {
+            background-color: var(--dark-slate);
+            color: #ffffff;
+            border: none;
+            font-weight: 700;
+            width: 100%;
+            padding: 12px 0;
+            border-radius: 12px;
+            display: block;
+            text-align: center;
+            text-decoration: none;
+            transition: var(--transition-smooth);
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .btn-booking-full:hover {
+            background-color: var(--lime-green);
+            color: #ffffff;
+            box-shadow: 0 5px 15px rgba(132,204,22,0.25);
+        }
+
+        /* Price Table Styling */
+        .price-card {
+            background: #ffffff;
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            padding: 35px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .table-price {
+            vertical-align: middle;
+            margin-bottom: 0;
+        }
+
+        .table-price th {
+            background-color: var(--dark-slate);
+            color: #ffffff;
+            border: none;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            padding: 12px 6px;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .table-price th:first-child {
+            border-top-left-radius: 12px;
+            border-bottom-left-radius: 12px;
+        }
+
+        .table-price th:last-child {
+            border-top-right-radius: 12px;
+            border-bottom-right-radius: 12px;
+        }
+
+        .table-price td {
+            padding: 12px 6px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #334155;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .table-price td:first-child {
+            white-space: nowrap;
+        }
+
+        .price-val {
+            color: var(--lime-green);
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+            font-size: 15px;
+        }
+
+        .badge-hour-type {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 50px;
+            display: inline-block;
+            white-space: nowrap;
+            margin-top: 5px;
+        }
+
+        .badge-hour-type.normal {
+            background-color: #f1f5f9;
+            color: #475569;
+        }
+
+        .badge-hour-type.gold {
+            background-color: rgba(245, 158, 11, 0.12);
+            color: #b45309;
+        }
+
+        .badge-hour-type.peak {
+            background-color: rgba(239, 68, 68, 0.12);
+            color: #b91c1c;
+        }
+    </style>
+}
+
+<!-- PAGE HEADER BANNER -->
+<div class="page-header-banner">
+    <div class="container">
+        <h1 class="page-title">Sân Bãi & Bảng Giá</h1>
+        <div class="breadcrumb-custom">
+            <a href="/Home/Index">Trang chủ</a>
+            <span>/</span>
+            <span>Sân bãi</span>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="container section-padding">
+    <div class="row g-5">
+        
+        <!-- Left: Pitches list -->
+        <div class="col-lg-8">
+            <div class="section-title-wrapper">
+                <h2 class="section-title">Danh sách sân Pickleball</h2>
+            </div>
+            
+            <div class="row">
+                <!-- Sân A -->
+                <div class="col-md-6">
+                    <div class="court-card-full">
+                        <div class="court-img-full-wrapper">
+                            <img src="https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=400&h=300&q=80" alt="Sân A" class="court-img-full" />
+                            <span class="court-rating-pill"><i class="fa-solid fa-star text-warning"></i> 4.9</span>
+                            <span class="court-capacity-pill">Sân 5 người</span>
+                        </div>
+                        <div class="court-content-full">
+                            <h3 class="court-name-full">Sân Pickleball A</h3>
+                            <div class="court-price-full">130.000đ <span>/ giờ</span></div>
+                            <div class="court-amenities">
+                                <span class="amenity-badge"><i class="fa-solid fa-lightbulb"></i> Đèn LED</span>
+                                <span class="amenity-badge"><i class="fa-solid fa-shield-halved"></i> Mái che</span>
+                                <span class="amenity-badge"><i class="fa-solid fa-bottle-water"></i> Nước miễn phí</span>
+                            </div>
+                            <a href="/Home/Booking" class="btn-booking-full">Đặt sân ngay</a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Sân B -->
+                <div class="col-md-6">
+                    <div class="court-card-full">
+                        <div class="court-img-full-wrapper">
+                            <img src="https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?auto=format&fit=crop&w=400&h=300&q=80" alt="Sân B" class="court-img-full" />
+                            <span class="court-rating-pill"><i class="fa-solid fa-star text-warning"></i> 4.8</span>
+                            <span class="court-capacity-pill">Sân 5 người</span>
+                        </div>
+                        <div class="court-content-full">
+                            <h3 class="court-name-full">Sân Pickleball B</h3>
+                            <div class="court-price-full">130.000đ <span>/ giờ</span></div>
+                            <div class="court-amenities">
+                                <span class="amenity-badge"><i class="fa-solid fa-lightbulb"></i> Đèn LED</span>
+                                <span class="amenity-badge"><i class="fa-solid fa-shield-halved"></i> Ngoài trời</span>
+                                <span class="amenity-badge"><i class="fa-solid fa-bottle-water"></i> Nước miễn phí</span>
+                            </div>
+                            <a href="/Home/Booking" class="btn-booking-full">Đặt sân ngay</a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Sân C -->
+                <div class="col-md-6">
+                    <div class="court-card-full">
+                        <div class="court-img-full-wrapper">
+                            <img src="https://images.unsplash.com/photo-1530541930197-ff16ac917b0e?auto=format&fit=crop&w=400&h=300&q=80" alt="Sân C" class="court-img-full" />
+                            <span class="court-rating-pill"><i class="fa-solid fa-star text-warning"></i> 4.7</span>
+                            <span class="court-capacity-pill">Sân 7 người</span>
+                        </div>
+                        <div class="court-content-full">
+                            <h3 class="court-name-full">Sân Pickleball C</h3>
+                            <div class="court-price-full">130.000đ <span>/ giờ</span></div>
+                            <div class="court-amenities">
+                                <span class="amenity-badge"><i class="fa-solid fa-lightbulb"></i> Đèn LED</span>
+                                <span class="amenity-badge"><i class="fa-solid fa-shield-halved"></i> Mái che</span>
+                                <span class="amenity-badge"><i class="fa-solid fa-fan"></i> Quạt làm mát</span>
+                            </div>
+                            <a href="/Home/Booking" class="btn-booking-full">Đặt sân ngay</a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Sân D -->
+                <div class="col-md-6">
+                    <div class="court-card-full">
+                        <div class="court-img-full-wrapper">
+                            <img src="https://images.unsplash.com/photo-1519766304817-4f37bda74a27?auto=format&fit=crop&w=400&h=300&q=80" alt="Sân D" class="court-img-full" />
+                            <span class="court-rating-pill"><i class="fa-solid fa-star text-warning"></i> 4.9</span>
+                            <span class="court-capacity-pill">Sân 7 người</span>
+                        </div>
+                        <div class="court-content-full">
+                            <h3 class="court-name-full">Sân Pickleball D</h3>
+                            <div class="court-price-full">130.000đ <span>/ giờ</span></div>
+                            <div class="court-amenities">
+                                <span class="amenity-badge"><i class="fa-solid fa-lightbulb"></i> Đèn LED</span>
+                                <span class="amenity-badge"><i class="fa-solid fa-shield-halved"></i> Ngoài trời</span>
+                                <span class="amenity-badge"><i class="fa-solid fa-wifi"></i> Wifi miễn phí</span>
+                            </div>
+                            <a href="/Home/Booking" class="btn-booking-full">Đặt sân ngay</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right: Pricing Table -->
+        <div class="col-lg-4">
+            <div class="section-title-wrapper">
+                <h2 class="section-title">Bảng giá dịch vụ</h2>
+            </div>
+            
+            <div class="price-card">
+                <div class="table-responsive">
+                    <table class="table table-price text-center">
+                        <thead>
+                            <tr>
+                                <th>Khung giờ</th>
+                                <th>Thứ 2 - 5</th>
+                                <th>Thứ 6 - 7</th>
+                                <th>Chủ nhật</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div class="fw-bold">06:00 - 08:00</div>
+                                    <span class="badge-hour-type normal">Giờ thường</span>
+                                </td>
+                                <td><span class="price-val">100k</span></td>
+                                <td><span class="price-val">130k</span></td>
+                                <td><span class="price-val">130k</span></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="fw-bold">08:00 - 17:00</div>
+                                    <span class="badge-hour-type gold">Giờ vàng</span>
+                                </td>
+                                <td><span class="price-val">130k</span></td>
+                                <td><span class="price-val">150k</span></td>
+                                <td><span class="price-val">150k</span></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="fw-bold">17:00 - 22:00</div>
+                                    <span class="badge-hour-type peak">Cao điểm</span>
+                                </td>
+                                <td><span class="price-val">150k</span></td>
+                                <td><span class="price-val">180k</span></td>
+                                <td><span class="price-val">180k</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-4 p-3 rounded-3 bg-light border border-secondary border-opacity-10 small text-muted">
+                    <i class="fa-solid fa-circle-info text-success me-2"></i> **Giờ vàng** được tặng kèm 1 chai nước khoáng miễn phí. Khung giờ **Cao điểm** khuyến khích đặt lịch trước ít nhất 1 ngày để đảm bảo có sân.
+                </div>
+            </div>
+        </div>
+        
+    </div>
+</div>

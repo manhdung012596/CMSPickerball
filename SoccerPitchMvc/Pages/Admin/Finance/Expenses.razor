@@ -1,0 +1,537 @@
+@page "/admin/finance/expenses"
+@layout AdminLayout
+@using SoccerPitchMvc.Models
+@using SoccerPitchMvc.Services
+@inject IFinanceService FinanceService
+@inject ToastService Toast
+
+<PageTitle>Quản lý dòng tiền thủ công - Sổ quỹ</PageTitle>
+
+<div class="page-header d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h1 class="page-title"><i class="fa-solid fa-file-invoice-dollar me-2 text-primary"></i>Giao dịch Sổ quỹ</h1>
+        <p class="text-muted mb-0">Quản lý các phiếu thu chi ngoại bộ và chi phí vận hành (điện nước, sửa chữa, lương...)</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-danger px-3" @onclick="() => OpenAddModal(0)">
+            <i class="fa-solid fa-arrow-up-from-bracket me-1"></i> Lập phiếu Chi (PC)
+        </button>
+        <button class="btn btn-success px-3" @onclick="() => OpenAddModal(1)">
+            <i class="fa-solid fa-arrow-down-to-bracket me-1"></i> Lập phiếu Thu (PT)
+        </button>
+    </div>
+</div>
+
+<!-- Stats row -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100 card-hover">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-danger bg-opacity-10 p-3">
+                    <i class="fa-solid fa-arrow-trend-down fa-lg text-danger"></i>
+                </div>
+                <div>
+                    <div class="small text-muted fw-semibold">Tổng chi quỹ (Vận hành)</div>
+                    <div class="fs-3 fw-bold text-danger">@TotalExpenses.ToString("N0")đ</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100 card-hover">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-success bg-opacity-10 p-3">
+                    <i class="fa-solid fa-arrow-trend-up fa-lg text-success"></i>
+                </div>
+                <div>
+                    <div class="small text-muted fw-semibold">Tổng thu quỹ (Thủ công)</div>
+                    <div class="fs-3 fw-bold text-success">@TotalIncomes.ToString("N0")đ</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100 card-hover">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-primary bg-opacity-10 p-3">
+                    <i class="fa-solid fa-receipt fa-lg text-primary"></i>
+                </div>
+                <div>
+                    <div class="small text-muted fw-semibold">Số lượng phiếu giao dịch</div>
+                    <div class="fs-3 fw-bold text-primary">@Transactions.Count phiếu</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-3">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Tìm kiếm</label>
+                <input type="text" class="form-control form-control-sm" placeholder="Mã phiếu, người nộp/nhận..."
+                       @bind-value="SearchText" @bind-value:event="oninput" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold">Loại phiếu</label>
+                <select class="form-select form-select-sm" @bind="FilterType">
+                    <option value="-1">Tất cả</option>
+                    <option value="1">Thu (PT)</option>
+                    <option value="0">Chi (PC)</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold">Danh mục</label>
+                <select class="form-select form-select-sm" @bind="FilterCategory">
+                    <option value="0">Tất cả danh mục</option>
+                    <option value="12">Thu khác</option>
+                    <option value="21">Chi điện nước</option>
+                    <option value="22">Chi sửa chữa/vận hành</option>
+                    <option value="23">Chi lương nhân viên</option>
+                    <option value="24">Chi khác</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold">Hình thức</label>
+                <select class="form-select form-select-sm" @bind="FilterMethod">
+                    <option value="-1">Tất cả</option>
+                    <option value="0">Tiền mặt</option>
+                    <option value="1">Chuyển khoản</option>
+                    <option value="2">Ví điện tử</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold">Ngày tạo</label>
+                <input type="date" class="form-control form-control-sm" @bind="FilterDate" />
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <button class="btn btn-sm btn-outline-secondary w-100" @onclick="ResetFilters">
+                    <i class="fas fa-undo"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transactions Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        @if (IsLoading)
+        {
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <div class="mt-2 text-muted">Đang tải danh sách giao dịch...</div>
+            </div>
+        }
+        else if (!FilteredList.Any())
+        {
+            <div class="text-center py-5 text-muted">
+                <i class="fa-solid fa-file-invoice-dollar fa-3x text-light mb-3 d-block"></i>
+                <p>Không tìm thấy giao dịch nào phù hợp.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="40">#</th>
+                            <th>Mã phiếu</th>
+                            <th class="text-center">Loại</th>
+                            <th>Danh mục thu chi</th>
+                            <th class="text-end">Số tiền</th>
+                            <th class="text-center">Ngày lập</th>
+                            <th>Người nộp/nhận</th>
+                            <th class="text-center">Hình thức</th>
+                            <th>Ghi chú</th>
+                            <th width="110" class="text-center">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var (t, idx) in FilteredList.Select((t, i) => (t, i + 1)))
+                        {
+                            <tr>
+                                <td class="text-muted fw-semibold small">@idx</td>
+                                <td class="fw-bold text-dark">@t.TransactionCode</td>
+                                <td class="text-center">
+                                    <span class="badge @t.TypeBadge bg-opacity-10 text-@t.TypeLabel.ToLower() border border-@t.TypeLabel.ToLower() border-opacity-25 px-2">
+                                        @t.TypeLabel
+                                    </span>
+                                </td>
+                                <td>
+                                    <i class="@t.CategoryIcon me-1"></i> @t.CategoryLabel
+                                </td>
+                                <td class="text-end fw-bold @(t.TransactionType == 1 ? "text-success" : "text-danger")">
+                                    @(t.TransactionType == 1 ? "+" : "-")@t.Amount.ToString("N0")đ
+                                </td>
+                                <td class="text-center small">@t.TransactionDate.ToString("dd/MM/yyyy")</td>
+                                <td class="fw-semibold">@t.PayerPayee</td>
+                                <td class="text-center">
+                                    <span class="badge @t.MethodBadge">@t.MethodLabel</span>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(t.Notes))
+                                    {
+                                        <small class="text-muted text-truncate d-inline-block" style="max-width: 150px;" title="@t.Notes">
+                                            @t.Notes
+                                        </small>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">—</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary" title="Chỉnh sửa"
+                                                @onclick="() => OpenEditModal(t)">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger" title="Xóa"
+                                                @onclick="() => ConfirmDelete(t)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer bg-light text-muted small">
+                Hiển thị <strong>@FilteredList.Count</strong> / @Transactions.Count phiếu thu chi
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Add/Edit Transaction Modal -->
+@if (ShowFormModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="fa-solid @(IsEditMode ? "fa-edit" : "fa-plus-circle") me-2"></i>
+                        @(IsEditMode ? "Cập nhật phiếu giao dịch" : (FormModel.TransactionType == 1 ? "Lập Phiếu Thu mới (PT)" : "Lập Phiếu Chi mới (PC)"))
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseFormModal"></button>
+                </div>
+                <EditForm Model="FormModel" OnValidSubmit="SaveTransaction">
+                    <DataAnnotationsValidator />
+                    <div class="modal-body py-3">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Loại giao dịch</label>
+                                <select class="form-select form-select-sm" @bind="FormModel.TransactionType" disabled="@IsEditMode">
+                                    <option value="1">Phiếu Thu (PT)</option>
+                                    <option value="0">Phiếu Chi (PC)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Danh mục thu/chi <span class="text-danger">*</span></label>
+                                <select class="form-select form-select-sm" @bind="FormModel.Category">
+                                    <option value="0">-- Chọn danh mục --</option>
+                                    @if (FormModel.TransactionType == 1)
+                                    {
+                                        <option value="12">Thu khác (Ngoài đặt sân/bán shop)</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="21">Chi điện nước</option>
+                                        <option value="22">Chi sửa chữa / vận hành</option>
+                                        <option value="23">Chi lương nhân viên</option>
+                                        <option value="24">Chi khác</option>
+                                    }
+                                </select>
+                                <ValidationMessage For="@(() => FormModel.Category)" class="text-danger small mt-1" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Số tiền <span class="text-danger">*</span></label>
+                                <div class="input-group input-group-sm">
+                                    <InputNumber class="form-control text-end text-success fw-bold" @bind-Value="FormModel.Amount" />
+                                    <span class="input-group-text">đ</span>
+                                </div>
+                                <ValidationMessage For="@(() => FormModel.Amount)" class="text-danger small mt-1" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Ngày thực hiện <span class="text-danger">*</span></label>
+                                <InputDate class="form-control form-control-sm" @bind-Value="FormModel.TransactionDate" />
+                                <ValidationMessage For="@(() => FormModel.TransactionDate)" class="text-danger small mt-1" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">
+                                    @(FormModel.TransactionType == 1 ? "Họ tên người nộp tiền" : "Họ tên người nhận tiền") <span class="text-danger">*</span>
+                                </label>
+                                <InputText class="form-control form-control-sm" @bind-Value="FormModel.PayerPayee" placeholder="Nhập tên đối tác..." />
+                                <ValidationMessage For="@(() => FormModel.PayerPayee)" class="text-danger small mt-1" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Hình thức thanh toán</label>
+                                <select class="form-select form-select-sm" @bind="FormModel.PaymentMethod">
+                                    <option value="0">Tiền mặt</option>
+                                    <option value="1">Chuyển khoản</option>
+                                    <option value="2">Ví điện tử</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Ghi chú phiếu</label>
+                                <InputText class="form-control form-control-sm" @bind-Value="FormModel.Notes" placeholder="Mô tả nội dung thu chi..." />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light py-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="CloseFormModal">Hủy</button>
+                        <button type="submit" class="btn btn-sm btn-primary" disabled="@IsSubmitting">
+                            @if (IsSubmitting) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                            <i class="fas fa-save me-1"></i>Lưu lại
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Delete Confirmation Modal -->
+@if (ShowDeleteModal && TransactionToDelete != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-danger text-white py-2">
+                    <h5 class="modal-title fs-6">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Xác nhận xóa phiếu
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="() => ShowDeleteModal = false"></button>
+                </div>
+                <div class="modal-body py-3">
+                    <p class="mb-1">Bạn có chắc chắn muốn xóa phiếu giao dịch:</p>
+                    <p class="fw-bold text-danger fs-5 mb-1">@TransactionToDelete.TransactionCode</p>
+                    <p class="text-muted small">Người nộp/nhận: <strong>@TransactionToDelete.PayerPayee</strong></p>
+                    <p class="text-muted small">Số tiền: <strong class="text-dark">@TransactionToDelete.Amount.ToString("N0")đ</strong></p>
+                </div>
+                <div class="modal-footer py-2">
+                    <button class="btn btn-sm btn-outline-secondary" @onclick="() => ShowDeleteModal = false">Hủy</button>
+                    <button class="btn btn-sm btn-danger" @onclick="ExecuteDelete" disabled="@IsDeleting">
+                        @if (IsDeleting) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                        Xác nhận xóa
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .card-hover:hover {
+        transform: translateY(-2px);
+        transition: transform 0.2s ease-in-out;
+    }
+</style>
+
+@code {
+    private List<CashTransactionListDto> Transactions = new();
+    private bool IsLoading = true;
+    private string SearchText = string.Empty;
+    private int FilterType = -1;
+    private int FilterCategory = 0;
+    private int FilterMethod = -1;
+    private DateTime? FilterDate;
+
+    // Form modal state
+    private bool ShowFormModal = false;
+    private bool IsEditMode = false;
+    private bool IsSubmitting = false;
+    private UpdateCashTransactionDto FormModel = new();
+
+    // Delete modal state
+    private bool ShowDeleteModal = false;
+    private bool IsDeleting = false;
+    private CashTransactionListDto? TransactionToDelete;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        IsLoading = true;
+        Transactions = await FinanceService.GetTransactionsAsync();
+        IsLoading = false;
+    }
+
+    private List<CashTransactionListDto> FilteredList
+    {
+        get
+        {
+            var q = Transactions.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                var s = SearchText.Trim().ToLower();
+                q = q.Where(x => x.TransactionCode.ToLower().Contains(s) 
+                              || x.PayerPayee.ToLower().Contains(s) 
+                              || (x.Notes != null && x.Notes.ToLower().Contains(s)));
+            }
+
+            if (FilterType != -1)
+            {
+                q = q.Where(x => x.TransactionType == FilterType);
+            }
+
+            if (FilterCategory > 0)
+            {
+                q = q.Where(x => x.Category == FilterCategory);
+            }
+
+            if (FilterMethod != -1)
+            {
+                q = q.Where(x => x.PaymentMethod == FilterMethod);
+            }
+
+            if (FilterDate.HasValue)
+            {
+                q = q.Where(x => x.TransactionDate.Date == FilterDate.Value.Date);
+            }
+
+            return q.ToList();
+        }
+    }
+
+    private decimal TotalExpenses => FilteredList.Where(x => x.TransactionType == 0).Sum(x => x.Amount);
+    private decimal TotalIncomes => FilteredList.Where(x => x.TransactionType == 1).Sum(x => x.Amount);
+
+    private void ResetFilters()
+    {
+        SearchText = string.Empty;
+        FilterType = -1;
+        FilterCategory = 0;
+        FilterMethod = -1;
+        FilterDate = null;
+    }
+
+    private void OpenAddModal(int type)
+    {
+        IsEditMode = false;
+        FormModel = new UpdateCashTransactionDto
+        {
+            TransactionType = type,
+            Category = type == 1 ? 12 : 21, // default categories
+            Amount = 0,
+            TransactionDate = DateTime.Now,
+            PaymentMethod = 0, // Cash
+            PayerPayee = string.Empty,
+            Notes = string.Empty
+        };
+        ShowFormModal = true;
+    }
+
+    private void OpenEditModal(CashTransactionListDto t)
+    {
+        IsEditMode = true;
+        FormModel = new UpdateCashTransactionDto
+        {
+            Id = t.Id,
+            TransactionType = t.TransactionType,
+            Category = t.Category,
+            Amount = t.Amount,
+            TransactionDate = t.TransactionDate,
+            PayerPayee = t.PayerPayee,
+            PaymentMethod = t.PaymentMethod,
+            Notes = t.Notes
+        };
+        ShowFormModal = true;
+    }
+
+    private void CloseFormModal()
+    {
+        ShowFormModal = false;
+    }
+
+    private async Task SaveTransaction()
+    {
+        if (FormModel.Category == 0)
+        {
+            Toast.ShowError("Vui lòng chọn danh mục.");
+            return;
+        }
+
+        IsSubmitting = true;
+        try
+        {
+            if (IsEditMode)
+            {
+                await FinanceService.UpdateTransactionAsync(FormModel);
+                Toast.ShowSuccess($"Đã cập nhật phiếu «{FormModel.PayerPayee}» thành công!");
+            }
+            else
+            {
+                var createDto = new CreateCashTransactionDto
+                {
+                    TransactionType = FormModel.TransactionType,
+                    Category = FormModel.Category,
+                    Amount = FormModel.Amount,
+                    TransactionDate = FormModel.TransactionDate,
+                    PayerPayee = FormModel.PayerPayee,
+                    PaymentMethod = FormModel.PaymentMethod,
+                    Notes = FormModel.Notes
+                };
+                await FinanceService.CreateTransactionAsync(createDto);
+                Toast.ShowSuccess($"Đã tạo phiếu thành công!");
+            }
+
+            ShowFormModal = false;
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Toast.ShowError($"Lỗi: {ex.Message}");
+        }
+        finally
+        {
+            IsSubmitting = false;
+        }
+    }
+
+    private void ConfirmDelete(CashTransactionListDto t)
+    {
+        TransactionToDelete = t;
+        ShowDeleteModal = true;
+    }
+
+    private async Task ExecuteDelete()
+    {
+        if (TransactionToDelete == null) return;
+        IsDeleting = true;
+
+        try
+        {
+            bool ok = await FinanceService.DeleteTransactionAsync(TransactionToDelete.Id);
+            if (ok)
+            {
+                Toast.ShowSuccess($"Đã xóa phiếu «{TransactionToDelete.TransactionCode}» thành công.");
+                await LoadData();
+            }
+            else
+            {
+                Toast.ShowError("Không thể xóa phiếu.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Toast.ShowError($"Lỗi: {ex.Message}");
+        }
+        finally
+        {
+            IsDeleting = false;
+            ShowDeleteModal = false;
+            TransactionToDelete = null;
+        }
+    }
+}

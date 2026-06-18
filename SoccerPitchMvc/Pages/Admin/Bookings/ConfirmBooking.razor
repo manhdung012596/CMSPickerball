@@ -1,0 +1,144 @@
+@page "/admin/bookings/confirm"
+@layout AdminLayout
+@inject SoccerPitchMvc.Services.IBookingService BookingService
+@inject NavigationManager NavigationManager
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold text-dark mb-1"><i class="fa-solid fa-circle-check text-success"></i> Xác nhận Đặt Sân</h2>
+            <p class="text-muted">Xem và phê duyệt danh sách các lượt đặt sân Pickleball đang chờ xử lý</p>
+        </div>
+    </div>
+
+    @if (errorMessage != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill"></i> @errorMessage
+            <button type="button" class="btn-close" @onclick="() => errorMessage = null" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (successMessage != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill"></i> @successMessage
+            <button type="button" class="btn-close" @onclick="() => successMessage = null" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="py-3 px-4">Khách hàng</th>
+                            <th class="py-3">Sân</th>
+                            <th class="py-3">Ngày đặt</th>
+                            <th class="py-3">Khung giờ</th>
+                            <th class="py-3">Tổng tiền</th>
+                            <th class="py-3">Ghi chú</th>
+                            <th class="py-3 text-end px-4">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (pendingBookings == null)
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    <div class="spinner-border text-success" role="status">
+                                        <span class="visually-hidden">Đang tải...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else if (!pendingBookings.Any())
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    <i class="bi bi-check-circle display-4 d-block mb-3 text-success"></i>
+                                    Tuyệt vời! Không có yêu cầu đặt sân nào đang chờ duyệt.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var b in pendingBookings)
+                            {
+                                <tr>
+                                    <td class="py-3 px-4">
+                                        <div class="fw-bold text-dark">@b.Customer?.FullName</div>
+                                        <div class="small text-muted">@b.Customer?.PhoneNumber</div>
+                                    </td>
+                                    <td class="fw-semibold text-dark">@b.Pitch?.Name</td>
+                                    <td class="text-dark">@b.BookingDate.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        <span class="badge bg-secondary fs-6">
+                                            @FormatTime(b.TimeSlot?.StartTime) - @FormatTime(b.TimeSlot?.EndTime)
+                                        </span>
+                                    </td>
+                                    <td class="fw-bold text-success">@b.TotalPrice.ToString("N0") VNĐ</td>
+                                    <td class="text-muted text-truncate" style="max-width: 150px;">@b.Note</td>
+                                    <td class="text-end px-4">
+                                        <div class="btn-group shadow-sm">
+                                            <button class="btn btn-primary btn-sm" @onclick='() => UpdateStatus(b.Id, 1, "Xác nhận đặt sân")'>
+                                                <i class="bi bi-check-lg"></i> Duyệt
+                                            </button>
+                                            <button class="btn btn-success btn-sm" @onclick='() => UpdateStatus(b.Id, 2, "Thanh toán đặt sân")'>
+                                                <i class="bi bi-cash-coin"></i> Thanh toán
+                                            </button>
+                                            <button class="btn btn-danger btn-sm" @onclick='() => UpdateStatus(b.Id, 3, "Hủy đặt sân")'>
+                                                <i class="bi bi-x-circle-fill"></i> Hủy
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Booking>? pendingBookings;
+    private string? errorMessage;
+    private string? successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPendingBookingsAsync();
+    }
+
+    private async Task LoadPendingBookingsAsync()
+    {
+        var allBookings = await BookingService.GetActiveBookingsAsync();
+        pendingBookings = allBookings.Where(b => b.Status == 0).ToList();
+    }
+
+    private string FormatTime(TimeOnly? time)
+    {
+        if (!time.HasValue) return "";
+        return time.Value.ToString(@"HH\:mm");
+    }
+
+    private async Task UpdateStatus(int bookingId, int newStatus, string actionName)
+    {
+        errorMessage = null;
+        successMessage = null;
+
+        var success = await BookingService.UpdateBookingStatusAsync(bookingId, newStatus);
+        if (success)
+        {
+            successMessage = $"Thực hiện '{actionName}' thành công!";
+            await LoadPendingBookingsAsync();
+        }
+        else
+        {
+            errorMessage = "Đã xảy ra lỗi khi cập nhật trạng thái đặt sân.";
+        }
+    }
+}

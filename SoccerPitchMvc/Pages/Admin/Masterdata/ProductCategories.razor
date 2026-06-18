@@ -1,0 +1,298 @@
+@page "/admin/masterdata/product-categories"
+@layout AdminLayout
+@using SoccerPitchMvc.Models
+@using SoccerPitchMvc.Services
+@inject IMasterdataService MasterdataService
+@inject ToastService Toast
+
+<PageTitle>Danh mục sản phẩm - Quản trị</PageTitle>
+
+<div class="page-header d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h1 class="page-title"><i class="fas fa-tags me-2 text-primary"></i>Danh mục sản phẩm</h1>
+        <p class="text-muted mb-0">Phân loại vợt, bóng, phụ kiện Pickleball và các sản phẩm khác</p>
+    </div>
+    <button class="btn btn-primary" @onclick="ShowCreateModal">
+        <i class="fas fa-plus me-1"></i> Thêm danh mục
+    </button>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        @if (IsLoading)
+        {
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary"></div>
+                <p class="mt-2 text-muted">Đang tải...</p>
+            </div>
+        }
+        else if (!Categories.Any())
+        {
+            <div class="text-center py-5">
+                <i class="fas fa-tags fa-3x text-muted mb-3"></i>
+                <p class="text-muted">Chưa có danh mục sản phẩm nào.</p>
+                <button class="btn btn-primary" @onclick="ShowCreateModal"><i class="fas fa-plus me-1"></i>Thêm ngay</button>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="40">#</th>
+                            <th>Tên danh mục</th>
+                            <th>Danh mục cha</th>
+                            <th>Icon</th>
+                            <th>Mô tả</th>
+                            <th class="text-center">Thứ tự</th>
+                            <th class="text-center">Trạng thái</th>
+                            <th width="120" class="text-center">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var (cat, index) in Categories.Select((c, i) => (c, i + 1)))
+                        {
+                            <tr>
+                                <td class="text-muted fw-semibold">@index</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        @if (!string.IsNullOrEmpty(cat.IconClass))
+                                        {
+                                            <i class="@cat.IconClass fs-5 text-primary"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-folder text-warning"></i>
+                                        }
+                                        <span class="fw-semibold">@cat.Name</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(cat.ParentName))
+                                    {
+                                        <span class="badge bg-light text-dark border">@cat.ParentName</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">Gốc</span>
+                                    }
+                                </td>
+                                <td>
+                                    <code class="text-muted small">@(cat.IconClass ?? "—")</code>
+                                </td>
+                                <td>
+                                    <span class="text-muted small" style="max-width:200px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                        @(cat.Description ?? "—")
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-light text-dark border">@cat.SortOrder</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-@cat.StatusBadge">@cat.StatusText</span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary" @onclick="() => ShowEditModal(cat)"><i class="fas fa-edit"></i></button>
+                                        <button class="btn btn-outline-danger" @onclick="() => ConfirmDelete(cat)"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer bg-light">
+                <span class="text-muted small">Tổng: <strong>@Categories.Count</strong> danh mục</span>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Create/Edit Modal -->
+@if (ShowModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="fas fa-@(IsEditing ? "edit" : "plus") me-2"></i>@(IsEditing ? "Sửa danh mục" : "Thêm danh mục")</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Tên danh mục <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" @bind="ModalName" placeholder="VD: Vợt Pickleball, Bóng, Phụ kiện..." />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Danh mục cha</label>
+                        <select class="form-select" @bind="ModalParentId">
+                            <option value="">-- Không có (Danh mục gốc) --</option>
+                            @foreach (var cat in AllCategories.Where(c => !IsEditing || c.Id != ModalId))
+                            {
+                                <option value="@cat.Id">@cat.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Icon class (FontAwesome)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                @if (!string.IsNullOrEmpty(ModalIconClass))
+                                {
+                                    <i class="@ModalIconClass"></i>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-folder"></i>
+                                }
+                            </span>
+                            <input type="text" class="form-control" @bind="ModalIconClass" placeholder="fas fa-box, fas fa-table-tennis..." />
+                        </div>
+                        <div class="form-text">Tìm icon tại <a href="https://fontawesome.com/icons" target="_blank">fontawesome.com</a></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Mô tả</label>
+                        <textarea class="form-control" @bind="ModalDescription" rows="2"></textarea>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Thứ tự</label>
+                            <input type="number" class="form-control" @bind="ModalSortOrder" min="0" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Trạng thái</label>
+                            <select class="form-select" @bind="ModalStatus">
+                                <option value="1">Hoạt động</option>
+                                <option value="0">Ẩn</option>
+                            </select>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(ModalError))
+                    {
+                        <div class="alert alert-danger mt-3 py-2 small"><i class="fas fa-exclamation-circle me-1"></i>@ModalError</div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary" @onclick="CloseModal">Hủy</button>
+                    <button class="btn btn-primary" @onclick="SaveCategory" disabled="@IsSaving">
+                        @if (IsSaving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                        @(IsEditing ? "Lưu thay đổi" : "Thêm danh mục")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Delete Modal -->
+@if (ShowDeleteModal && CatToDelete != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Xác nhận xóa</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="() => ShowDeleteModal = false"></button>
+                </div>
+                <div class="modal-body py-3">
+                    <p>Xóa danh mục: <strong class="text-danger">@CatToDelete.Name</strong>?</p>
+                    <p class="text-muted small">Chú ý: Không thể xóa nếu có danh mục con!</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary" @onclick="() => ShowDeleteModal = false">Hủy</button>
+                    <button class="btn btn-danger" @onclick="ExecuteDelete" disabled="@IsDeleting">
+                        @if (IsDeleting) { <span class="spinner-border spinner-border-sm me-1"></span> } Xóa
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<ProductCategoryListDto> Categories = new();
+    private List<ProductCategory> AllCategories = new();
+    private bool IsLoading = true;
+    private bool ShowModal = false;
+    private bool ShowDeleteModal = false;
+    private bool IsEditing = false;
+    private bool IsSaving = false;
+    private bool IsDeleting = false;
+    private ProductCategoryListDto? CatToDelete;
+
+    private int ModalId = 0;
+    private string ModalName = string.Empty;
+    private string ModalDescription = string.Empty;
+    private string ModalIconClass = string.Empty;
+    private string ModalParentId = string.Empty;
+    private int ModalSortOrder = 0;
+    private int ModalStatus = 1;
+    private string ModalError = string.Empty;
+
+    protected override async Task OnInitializedAsync() => await LoadData();
+
+    private async Task LoadData()
+    {
+        IsLoading = true;
+        Categories = await MasterdataService.GetAllProductCategoriesAsync();
+        AllCategories = await MasterdataService.GetProductCategorySelectListAsync();
+        IsLoading = false;
+    }
+
+    private void ShowCreateModal()
+    {
+        IsEditing = false; ModalId = 0; ModalName = string.Empty; ModalDescription = string.Empty;
+        ModalIconClass = string.Empty; ModalParentId = string.Empty; ModalSortOrder = 0;
+        ModalStatus = 1; ModalError = string.Empty; ShowModal = true;
+    }
+
+    private void ShowEditModal(ProductCategoryListDto cat)
+    {
+        IsEditing = true; ModalId = cat.Id; ModalName = cat.Name;
+        ModalDescription = cat.Description ?? string.Empty; ModalIconClass = cat.IconClass ?? string.Empty;
+        ModalParentId = string.Empty; ModalSortOrder = cat.SortOrder; ModalStatus = cat.Status;
+        ModalError = string.Empty; ShowModal = true;
+    }
+
+    private void CloseModal() { ShowModal = false; ModalError = string.Empty; }
+
+    private async Task SaveCategory()
+    {
+        if (string.IsNullOrWhiteSpace(ModalName)) { ModalError = "Tên danh mục không được để trống!"; return; }
+        IsSaving = true; ModalError = string.Empty;
+        int? parentId = int.TryParse(ModalParentId, out var p) ? p : null;
+
+        (bool Success, string Message) result;
+        if (IsEditing)
+            result = await MasterdataService.UpdateProductCategoryAsync(new UpdateProductCategoryDto
+            {
+                Id = ModalId, Name = ModalName, Description = ModalDescription,
+                IconClass = ModalIconClass, ParentId = parentId, SortOrder = ModalSortOrder, Status = ModalStatus
+            });
+        else
+            result = await MasterdataService.CreateProductCategoryAsync(new CreateProductCategoryDto
+            {
+                Name = ModalName, Description = ModalDescription, IconClass = ModalIconClass,
+                ParentId = parentId, SortOrder = ModalSortOrder, Status = ModalStatus
+            });
+
+        IsSaving = false;
+        if (result.Success) { Toast.ShowSuccess(result.Message); CloseModal(); await LoadData(); }
+        else ModalError = result.Message;
+    }
+
+    private void ConfirmDelete(ProductCategoryListDto cat) { CatToDelete = cat; ShowDeleteModal = true; }
+
+    private async Task ExecuteDelete()
+    {
+        if (CatToDelete == null) return;
+        IsDeleting = true;
+        var result = await MasterdataService.DeleteProductCategoryAsync(CatToDelete.Id);
+        IsDeleting = false; ShowDeleteModal = false;
+        if (result.Success) { Toast.ShowSuccess(result.Message); await LoadData(); }
+        else Toast.ShowError(result.Message);
+        CatToDelete = null;
+    }
+}

@@ -1,0 +1,121 @@
+@model IEnumerable<SoccerPitchMvc.Models.Booking>
+
+@{
+    ViewData["Title"] = "Danh sách Đặt sân";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold text-dark mb-1"><i class="bi bi-calendar-check text-success"></i> Quản lý Đặt sân</h2>
+            <p class="text-muted">Danh sách và trạng thái các lượt đặt sân Pickleball</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Calendar" class="btn btn-outline-dark btn-lg shadow-sm">
+                <i class="bi bi-calendar3"></i> Xem Lịch Biểu
+            </a>
+            <a asp-action="Create" class="btn btn-success btn-lg shadow-sm">
+                <i class="bi bi-plus-lg"></i> Đặt Sân Mới
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="py-3 px-4">Khách hàng</th>
+                            <th class="py-3">Tên sân</th>
+                            <th class="py-3">Ngày Đặt</th>
+                            <th class="py-3">Khung Giờ</th>
+                            <th class="py-3">Tổng Tiền</th>
+                            <th class="py-3">Trạng Thái</th>
+                            <th class="py-3">Ghi chú</th>
+                            <th class="py-3 text-end px-4">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center py-5 text-muted">
+                                    <i class="bi bi-calendar-x display-4 d-block mb-3 text-secondary"></i>
+                                    Chưa có lượt đặt sân nào.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="fw-bold text-dark py-3 px-4">
+                                        @item.Customer.FullName
+                                        <div class="small text-muted fw-normal">@item.Customer.PhoneNumber</div>
+                                    </td>
+                                    <td><span class="badge bg-secondary">@item.Pitch.Name</span></td>
+                                    <td>@item.BookingDate.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        <span class="fw-semibold text-primary">
+                                            @item.TimeSlot.StartTime.ToString("HH:mm") - @item.TimeSlot.EndTime.ToString("HH:mm")
+                                        </span>
+                                    </td>
+                                    <td class="fw-bold text-success">@item.TotalPrice.ToString("#,##0") VNĐ</td>
+                                    <td>
+                                        @if (item.Status == 0)
+                                        {
+                                            <span class="badge bg-warning text-dark"><i class="bi bi-clock-history"></i> Chờ xác nhận</span>
+                                        }
+                                        else if (item.Status == 1)
+                                        {
+                                            <span class="badge bg-primary"><i class="bi bi-patch-check"></i> Đã xác nhận</span>
+                                        }
+                                        else if (item.Status == 2)
+                                        {
+                                            <span class="badge bg-success"><i class="bi bi-cash-coin"></i> Đã thanh toán</span>
+                                        }
+                                        else if (item.Status == 3)
+                                        {
+                                            <span class="badge bg-danger"><i class="bi bi-x-circle"></i> Đã hủy</span>
+                                        }
+                                    </td>
+                                    <td class="small text-muted">@item.Note</td>
+                                    <td class="text-end px-4">
+                                        <form asp-action="UpdateStatus" method="post" class="d-inline-flex gap-1">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            @if (item.Status == 0)
+                                            {
+                                                <button type="submit" name="status" value="1" class="btn btn-sm btn-outline-primary" title="Xác nhận">
+                                                    <i class="bi bi-check-lg"></i>
+                                                </button>
+                                                <button type="submit" name="status" value="3" class="btn btn-sm btn-outline-danger" title="Hủy bỏ">
+                                                    <i class="bi bi-x-lg"></i>
+                                                </button>
+                                            }
+                                            else if (item.Status == 1)
+                                            {
+                                                <button type="submit" name="status" value="2" class="btn btn-sm btn-success text-white" title="Thanh toán">
+                                                    <i class="bi bi-currency-dollar"></i> Thanh toán
+                                                </button>
+                                                <button type="submit" name="status" value="3" class="btn btn-sm btn-outline-danger" title="Hủy bỏ">
+                                                    <i class="bi bi-x-lg"></i>
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small">N/A</span>
+                                            }
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

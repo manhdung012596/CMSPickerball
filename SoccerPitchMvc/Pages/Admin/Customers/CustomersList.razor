@@ -1,0 +1,197 @@
+@page "/admin/customers"
+@layout AdminLayout
+@inject SoccerPitchMvc.Services.ICustomerService CustomerService
+@inject SoccerPitchMvc.Services.ToastService ToastService
+@inject NavigationManager NavigationManager
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold text-dark mb-1"><i class="fa-solid fa-users text-success"></i> Quản lý Khách Hàng</h2>
+            <p class="text-muted">Danh sách và thông tin liên hệ của các khách hàng đặt sân Pickleball</p>
+        </div>
+        <button class="btn btn-success btn-lg shadow-sm" @onclick="NavigateToCreate">
+            <i class="bi bi-plus-lg"></i> Thêm Khách Hàng
+        </button>
+    </div>
+
+    <!-- Search Toolbar -->
+    <div class="card shadow-sm border-0 rounded-3 mb-4 bg-light">
+        <div class="card-body p-3">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-9">
+                    <input type="text" class="form-control form-control-lg border-0 shadow-sm" placeholder="Tìm kiếm khách hàng theo tên hoặc số điện thoại..." 
+                           @bind="searchQuery" @bind:event="oninput" @onkeyup="ApplySearch" />
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-outline-success w-100 py-2 fw-semibold" @onclick="ResetSearch">
+                        <i class="bi bi-arrow-counterclockwise"></i> Đặt lại
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customers Grid -->
+    <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="py-3 px-4">Họ và tên</th>
+                            <th class="py-3">Số điện thoại</th>
+                            <th class="py-3">Địa chỉ</th>
+                            <th class="py-3 text-end px-4">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (filteredCustomers == null)
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center py-5 text-muted">
+                                    <div class="spinner-border text-success" role="status">
+                                        <span class="visually-hidden">Đang tải...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else if (!filteredCustomers.Any())
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center py-5 text-muted">
+                                    <i class="bi bi-people-fill display-4 d-block mb-3 text-secondary"></i>
+                                    Không tìm thấy khách hàng nào.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var c in filteredCustomers)
+                            {
+                                <tr>
+                                    <td class="fw-bold text-dark py-3 px-4">@c.FullName</td>
+                                    <td class="fw-semibold text-secondary">@c.PhoneNumber</td>
+                                    <td class="text-muted">@(string.IsNullOrEmpty(c.Address) ? "Chưa cập nhật" : c.Address)</td>
+                                    <td class="text-end px-4">
+                                        <div class="btn-group shadow-sm">
+                                            <button class="btn btn-outline-success btn-sm" @onclick="() => ViewHistory(c.Id)">
+                                                <i class="bi bi-calendar-range"></i> Lịch sử đặt
+                                            </button>
+                                            <button class="btn btn-outline-primary btn-sm" @onclick="() => EditCustomer(c.Id)">
+                                                <i class="bi bi-pencil-square"></i> Sửa
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm" @onclick="() => RequestDelete(c)">
+                                                <i class="bi bi-trash-fill"></i> Xóa
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+@if (customerToDelete != null)
+{
+    <div class="modal-backdrop fade show"></div>
+    <div class="modal fade show d-block" tabindex="-1" style="z-index: 1050;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle-fill"></i> Xác nhận xóa khách hàng</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CancelDelete" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-start py-4">
+                    Bạn có chắc chắn muốn xóa khách hàng <strong class="text-danger">@customerToDelete.FullName</strong>? Hành động này cũng sẽ xóa toàn bộ các đơn đặt sân liên quan của khách hàng.
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-secondary" @onclick="CancelDelete">Hủy</button>
+                    <button type="button" class="btn btn-danger px-4" @onclick="ConfirmDelete">Đồng ý xóa</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<CustomerListDto>? allCustomers;
+    private List<CustomerListDto>? filteredCustomers;
+    private string searchQuery = "";
+    private CustomerListDto? customerToDelete;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCustomersAsync();
+    }
+
+    private async Task LoadCustomersAsync()
+    {
+        allCustomers = await CustomerService.GetCustomersAsync();
+        filteredCustomers = allCustomers;
+    }
+
+    private void ApplySearch()
+    {
+        if (allCustomers == null) return;
+        filteredCustomers = allCustomers
+            .Where(c => c.FullName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) || 
+                        c.PhoneNumber.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+
+    private void ResetSearch()
+    {
+        searchQuery = "";
+        filteredCustomers = allCustomers;
+    }
+
+    private void NavigateToCreate()
+    {
+        NavigationManager.NavigateTo("admin/customers/create");
+    }
+
+    private void EditCustomer(int id)
+    {
+        NavigationManager.NavigateTo($"admin/customers/edit/{id}");
+    }
+
+    private void ViewHistory(int customerId)
+    {
+        NavigationManager.NavigateTo($"admin/customers/history/{customerId}");
+    }
+
+    private void RequestDelete(CustomerListDto customer)
+    {
+        customerToDelete = customer;
+    }
+
+    private void CancelDelete()
+    {
+        customerToDelete = null;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (customerToDelete != null)
+        {
+            var success = await CustomerService.DeleteCustomerAsync(customerToDelete.Id);
+            if (success)
+            {
+                ToastService.ShowSuccess($"Đã xóa thành công khách hàng '{customerToDelete.FullName}'.");
+                customerToDelete = null;
+                await LoadCustomersAsync();
+            }
+            else
+            {
+                ToastService.ShowError("Có lỗi xảy ra khi thực hiện xóa khách hàng.");
+                customerToDelete = null;
+            }
+        }
+    }
+}

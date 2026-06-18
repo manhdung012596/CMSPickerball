@@ -1,0 +1,602 @@
+@page "/admin/shop/products"
+@layout AdminLayout
+@using SoccerPitchMvc.Models
+@using SoccerPitchMvc.Services
+@inject IShopService ShopService
+@inject IMasterdataService MasterdataService
+@inject ToastService Toast
+@inject NavigationManager NavigationManager
+
+<PageTitle>Quản lý sản phẩm - Shop</PageTitle>
+
+<div class="page-header d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h1 class="page-title"><i class="fa-solid fa-box-open me-2 text-primary"></i>Quản lý Sản phẩm</h1>
+        <p class="text-muted mb-0">Xem danh sách, quản lý giá bán, giá nhập và tồn kho của sản phẩm trong shop</p>
+    </div>
+    <button class="btn btn-primary px-3" @onclick="OpenAddModal">
+        <i class="fas fa-plus me-1"></i> Thêm sản phẩm
+    </button>
+</div>
+
+<!-- Stats cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100 card-hover">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-primary bg-opacity-10 p-3">
+                    <i class="fa-solid fa-boxes-stacked fa-lg text-primary"></i>
+                </div>
+                <div>
+                    <div class="small text-muted fw-semibold">Tổng sản phẩm</div>
+                    <div class="fs-3 fw-bold text-primary">@Products.Count</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100 card-hover">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-success bg-opacity-10 p-3">
+                    <i class="fa-solid fa-circle-check fa-lg text-success"></i>
+                </div>
+                <div>
+                    <div class="small text-muted fw-semibold">Đang kinh doanh</div>
+                    <div class="fs-3 fw-bold text-success">@Products.Count(p => p.Status == 1)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100 card-hover">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-warning bg-opacity-10 p-3">
+                    <i class="fa-solid fa-triangle-exclamation fa-lg text-warning"></i>
+                </div>
+                <div>
+                    <div class="small text-muted fw-semibold">Sắp hết hàng</div>
+                    <div class="fs-3 fw-bold text-warning">@Products.Count(p => p.StockQuantity > 0 && p.StockQuantity < 10)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100 card-hover">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-danger bg-opacity-10 p-3">
+                    <i class="fa-solid fa-circle-xmark fa-lg text-danger"></i>
+                </div>
+                <div>
+                    <div class="small text-muted fw-semibold">Hết hàng</div>
+                    <div class="fs-3 fw-bold text-danger">@Products.Count(p => p.StockQuantity <= 0)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-3">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-search"></i></span>
+                    <input type="text" class="form-control border-start-0" placeholder="Tìm theo tên hoặc SKU..."
+                           @bind-value="SearchText" @bind-value:event="oninput" />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" @bind="FilterCategory">
+                    <option value="0">Tất cả danh mục</option>
+                    @foreach (var cat in Categories)
+                    {
+                        <option value="@cat.Id">@cat.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" @bind="FilterStatus">
+                    <option value="-1">Tất cả trạng thái</option>
+                    <option value="1">Đang bán</option>
+                    <option value="0">Ngừng bán</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-outline-secondary w-100" @onclick="ResetFilters">
+                    <i class="fas fa-undo me-1"></i>Làm mới
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Products Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        @if (IsLoading)
+        {
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <div class="mt-2 text-muted">Đang tải danh sách sản phẩm...</div>
+            </div>
+        }
+        else if (!FilteredList.Any())
+        {
+            <div class="text-center py-5">
+                <i class="fa-solid fa-box-open fa-3x text-muted mb-3 d-block"></i>
+                <p class="text-muted">Không tìm thấy sản phẩm nào phù hợp.</p>
+                <button class="btn btn-primary" @onclick="OpenAddModal">
+                    <i class="fas fa-plus me-1"></i>Tạo sản phẩm đầu tiên
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="40">#</th>
+                            <th width="70">Ảnh</th>
+                            <th>Tên sản phẩm</th>
+                            <th>Mã SKU</th>
+                            <th>Danh mục</th>
+                            <th>ĐVT</th>
+                            <th class="text-end">Giá nhập</th>
+                            <th class="text-end">Giá bán</th>
+                            <th class="text-center">Tồn kho</th>
+                            <th class="text-center">Trạng thái</th>
+                            <th width="110" class="text-center">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var (prod, idx) in FilteredList.Select((p, i) => (p, i + 1)))
+                        {
+                            <tr>
+                                <td class="text-muted fw-semibold small">@idx</td>
+                                <td>
+                                    <div class="product-img-wrapper">
+                                        @if (!string.IsNullOrEmpty(prod.ImageUrl))
+                                        {
+                                            <img src="@prod.ImageUrl" alt="@prod.Name" class="rounded product-img-thumb" 
+                                                 onerror="this.src='/images/products/placeholder.png'; this.onerror=null;" />
+                                        }
+                                        else
+                                        {
+                                            <div class="rounded product-img-placeholder d-flex align-items-center justify-content-center bg-light text-muted">
+                                                <i class="fa-solid fa-image"></i>
+                                            </div>
+                                        }
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="fw-bold text-dark">@prod.Name</div>
+                                    @if (!string.IsNullOrEmpty(prod.Description))
+                                    {
+                                        <div class="text-muted small text-truncate" style="max-width: 250px;">@prod.Description</div>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(prod.SKU))
+                                    {
+                                        <span class="badge bg-secondary font-monospace">@prod.SKU</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">—</span>
+                                    }
+                                </td>
+                                <td>@prod.CategoryName</td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">
+                                        @prod.UnitName (@prod.UnitSymbol)
+                                    </span>
+                                </td>
+                                <td class="text-end fw-semibold text-muted">@prod.PurchasePrice.ToString("N0")đ</td>
+                                <td class="text-end fw-bold text-success">@prod.SellingPrice.ToString("N0")đ</td>
+                                <td class="text-center">
+                                    <span class="badge @prod.StockStatusBadge fs-7 px-2">
+                                        @prod.StockQuantity @prod.UnitSymbol (@prod.StockStatus)
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge @prod.StatusBadge">@prod.StatusText</span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary" title="Chỉnh sửa"
+                                                @onclick="() => OpenEditModal(prod)">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger" title="Xóa / Ngừng bán"
+                                                @onclick="() => ConfirmDelete(prod)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer bg-light text-muted small">
+                Hiển thị <strong>@FilteredList.Count</strong> / @Products.Count sản phẩm
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Add/Edit Product Modal -->
+@if (ShowFormModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5); overflow-y: auto;">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="fa-solid @(IsEditMode ? "fa-edit" : "fa-plus") me-2"></i>
+                        @(IsEditMode ? "Cập nhật sản phẩm" : "Thêm sản phẩm mới")
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseFormModal"></button>
+                </div>
+                <EditForm Model="FormModel" OnValidSubmit="SaveProduct">
+                    <DataAnnotationsValidator />
+                    <div class="modal-body py-4">
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label fw-semibold">Tên sản phẩm <span class="text-danger">*</span></label>
+                                <InputText class="form-control" @bind-Value="FormModel.Name" placeholder="Nhập tên sản phẩm..." />
+                                <ValidationMessage For="@(() => FormModel.Name)" class="text-danger small mt-1" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Mã SKU</label>
+                                <InputText class="form-control" @bind-Value="FormModel.SKU" placeholder="Ví dụ: JOOLA16" />
+                                <ValidationMessage For="@(() => FormModel.SKU)" class="text-danger small mt-1" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Danh mục <span class="text-danger">*</span></label>
+                                <select class="form-select" @bind="FormModel.CategoryId">
+                                    <option value="0">-- Chọn danh mục --</option>
+                                    @foreach (var cat in Categories)
+                                    {
+                                        <option value="@cat.Id">@cat.Name</option>
+                                    }
+                                </select>
+                                <ValidationMessage For="@(() => FormModel.CategoryId)" class="text-danger small mt-1" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Đơn vị tính <span class="text-danger">*</span></label>
+                                <select class="form-select" @bind="FormModel.UnitId">
+                                    <option value="0">-- Chọn đơn vị --</option>
+                                    @foreach (var u in Units)
+                                    {
+                                        <option value="@u.Id">@u.Name (@u.Symbol)</option>
+                                    }
+                                </select>
+                                <ValidationMessage For="@(() => FormModel.UnitId)" class="text-danger small mt-1" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Giá nhập <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <InputNumber class="form-control text-end" @bind-Value="FormModel.PurchasePrice" />
+                                    <span class="input-group-text">đ</span>
+                                </div>
+                                <ValidationMessage For="@(() => FormModel.PurchasePrice)" class="text-danger small mt-1" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Giá bán <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <InputNumber class="form-control text-end text-success fw-bold" @bind-Value="FormModel.SellingPrice" />
+                                    <span class="input-group-text">đ</span>
+                                </div>
+                                <ValidationMessage For="@(() => FormModel.SellingPrice)" class="text-danger small mt-1" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Số tồn kho ban đầu</label>
+                                <InputNumber class="form-control text-center" @bind-Value="FormModel.StockQuantity" disabled="@IsEditMode" />
+                                @if (IsEditMode)
+                                {
+                                    <div class="form-text small text-warning"><i class="fa-solid fa-circle-info"></i> Nhập hàng để đổi tồn kho</div>
+                                }
+                                <ValidationMessage For="@(() => FormModel.StockQuantity)" class="text-danger small mt-1" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Ảnh sản phẩm (URL)</label>
+                                <InputText class="form-control" @bind-Value="FormModel.ImageUrl" placeholder="Nhập đường dẫn ảnh sản phẩm..." />
+                                <ValidationMessage For="@(() => FormModel.ImageUrl)" class="text-danger small mt-1" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Mô tả sản phẩm</label>
+                                <InputTextArea class="form-control" rows="3" @bind-Value="FormModel.Description" placeholder="Mô tả tóm tắt về sản phẩm..." />
+                                <ValidationMessage For="@(() => FormModel.Description)" class="text-danger small mt-1" />
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input" type="checkbox" id="productStatusSwitch"
+                                           checked="@(FormModel.Status == 1)"
+                                           @onchange="@((e) => FormModel.Status = (bool)e.Value! ? 1 : 0)" />
+                                    <label class="form-check-label fw-semibold" for="productStatusSwitch">Đang bán hàng (Active)</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-outline-secondary" @onclick="CloseFormModal">Hủy</button>
+                        <button type="submit" class="btn btn-primary" disabled="@IsSubmitting">
+                            @if (IsSubmitting)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1"></span>
+                            }
+                            <i class="fas fa-save me-1"></i>Lưu lại
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Delete Confirmation Modal -->
+@if (ShowDeleteModal && ProductToDelete != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Xác nhận xóa sản phẩm
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="() => ShowDeleteModal = false"></button>
+                </div>
+                <div class="modal-body py-3">
+                    <p>Bạn có chắc chắn muốn xóa sản phẩm:</p>
+                    <p class="fw-bold text-danger fs-5 mb-1">@ProductToDelete.Name</p>
+                    @if (!string.IsNullOrEmpty(ProductToDelete.SKU))
+                    {
+                        <span class="badge bg-secondary font-monospace">@ProductToDelete.SKU</span>
+                    }
+                    <div class="alert alert-warning mt-3 mb-0 py-2 small">
+                        <i class="fa-solid fa-triangle-exclamation me-1"></i>
+                        <strong>Lưu ý:</strong> Nếu sản phẩm đã phát sinh đơn hàng hoặc phiếu nhập, hệ thống sẽ tự động chuyển trạng thái sản phẩm thành <strong>Ngừng bán</strong> để bảo toàn lịch sử giao dịch.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary" @onclick="() => ShowDeleteModal = false">Hủy</button>
+                    <button class="btn btn-danger" @onclick="ExecuteDelete" disabled="@IsDeleting">
+                        @if (IsDeleting) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                        <i class="fas fa-trash me-1"></i>Xác nhận xóa
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .product-img-wrapper {
+        width: 50px;
+        height: 50px;
+        overflow: hidden;
+    }
+    .product-img-thumb {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border: 1px solid #dee2e6;
+    }
+    .product-img-placeholder {
+        width: 100%;
+        height: 100%;
+        font-size: 20px;
+        border: 1px dashed #ced4da;
+    }
+    .card-hover:hover {
+        transform: translateY(-2px);
+        transition: transform 0.2s ease-in-out;
+    }
+    .fs-7 {
+        font-size: 0.8rem;
+    }
+</style>
+
+@code {
+    private List<ProductListDto> Products = new();
+    private List<ProductCategoryListDto> Categories = new();
+    private List<UnitListDto> Units = new();
+
+    private bool IsLoading = true;
+    private string SearchText = string.Empty;
+    private int FilterCategory = 0;
+    private int FilterStatus = -1;
+
+    // Modal Form State
+    private bool ShowFormModal = false;
+    private bool IsEditMode = false;
+    private bool IsSubmitting = false;
+    private UpdateProductDto FormModel = new();
+
+    // Delete Modal State
+    private bool ShowDeleteModal = false;
+    private bool IsDeleting = false;
+    private ProductListDto? ProductToDelete;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+        Categories = await MasterdataService.GetAllProductCategoriesAsync();
+        Units = await MasterdataService.GetAllUnitsAsync();
+    }
+
+    private async Task LoadData()
+    {
+        IsLoading = true;
+        Products = await ShopService.GetProductsAsync();
+        IsLoading = false;
+    }
+
+    private List<ProductListDto> FilteredList
+    {
+        get
+        {
+            var q = Products.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                var txt = SearchText.Trim().ToLower();
+                q = q.Where(p => p.Name.ToLower().Contains(txt) || (p.SKU != null && p.SKU.ToLower().Contains(txt)));
+            }
+
+            if (FilterCategory > 0)
+            {
+                q = q.Where(p => p.CategoryId == FilterCategory);
+            }
+
+            if (FilterStatus != -1)
+            {
+                q = q.Where(p => p.Status == FilterStatus);
+            }
+
+            return q.ToList();
+        }
+    }
+
+    private void ResetFilters()
+    {
+        SearchText = string.Empty;
+        FilterCategory = 0;
+        FilterStatus = -1;
+    }
+
+    private void OpenAddModal()
+    {
+        IsEditMode = false;
+        FormModel = new UpdateProductDto
+        {
+            Status = 1,
+            StockQuantity = 0,
+            PurchasePrice = 0,
+            SellingPrice = 0
+        };
+        ShowFormModal = true;
+    }
+
+    private void OpenEditModal(ProductListDto prod)
+    {
+        IsEditMode = true;
+        FormModel = new UpdateProductDto
+        {
+            Id = prod.Id,
+            Name = prod.Name,
+            SKU = prod.SKU,
+            CategoryId = prod.CategoryId,
+            UnitId = prod.UnitId,
+            PurchasePrice = prod.PurchasePrice,
+            SellingPrice = prod.SellingPrice,
+            StockQuantity = prod.StockQuantity,
+            ImageUrl = prod.ImageUrl,
+            Description = prod.Description,
+            Status = prod.Status
+        };
+        ShowFormModal = true;
+    }
+
+    private void CloseFormModal()
+    {
+        ShowFormModal = false;
+    }
+
+    private async Task SaveProduct()
+    {
+        if (FormModel.CategoryId == 0)
+        {
+            Toast.ShowError("Vui lòng chọn danh mục sản phẩm.");
+            return;
+        }
+        if (FormModel.UnitId == 0)
+        {
+            Toast.ShowError("Vui lòng chọn đơn vị tính.");
+            return;
+        }
+        if (FormModel.SellingPrice < FormModel.PurchasePrice)
+        {
+            Toast.ShowError("Giá bán không được nhỏ hơn giá nhập.");
+            return;
+        }
+
+        IsSubmitting = true;
+        try
+        {
+            if (IsEditMode)
+            {
+                await ShopService.UpdateProductAsync(FormModel);
+                Toast.ShowSuccess($"Cập nhật sản phẩm «{FormModel.Name}» thành công!");
+            }
+            else
+            {
+                var createDto = new CreateProductDto
+                {
+                    Name = FormModel.Name,
+                    SKU = FormModel.SKU,
+                    CategoryId = FormModel.CategoryId,
+                    UnitId = FormModel.UnitId,
+                    PurchasePrice = FormModel.PurchasePrice,
+                    SellingPrice = FormModel.SellingPrice,
+                    StockQuantity = FormModel.StockQuantity,
+                    ImageUrl = FormModel.ImageUrl,
+                    Description = FormModel.Description,
+                    Status = FormModel.Status
+                };
+                await ShopService.CreateProductAsync(createDto);
+                Toast.ShowSuccess($"Thêm sản phẩm «{FormModel.Name}» thành công!");
+            }
+
+            ShowFormModal = false;
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Toast.ShowError($"Lỗi khi lưu sản phẩm: {ex.Message}");
+        }
+        finally
+        {
+            IsSubmitting = false;
+        }
+    }
+
+    private void ConfirmDelete(ProductListDto prod)
+    {
+        ProductToDelete = prod;
+        ShowDeleteModal = true;
+    }
+
+    private async Task ExecuteDelete()
+    {
+        if (ProductToDelete == null) return;
+
+        IsDeleting = true;
+        try
+        {
+            bool success = await ShopService.DeleteProductAsync(ProductToDelete.Id);
+            if (success)
+            {
+                Toast.ShowSuccess($"Đã xử lý xóa sản phẩm «{ProductToDelete.Name}» thành công.");
+                await LoadData();
+            }
+            else
+            {
+                Toast.ShowError("Không thể xóa sản phẩm.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Toast.ShowError($"Lỗi khi xóa: {ex.Message}");
+        }
+        finally
+        {
+            IsDeleting = false;
+            ShowDeleteModal = false;
+            ProductToDelete = null;
+        }
+    }
+}

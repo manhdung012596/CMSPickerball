@@ -1,0 +1,155 @@
+@{
+    ViewData["Title"] = "Lịch biểu đặt sân";
+    var pitches = ViewBag.Pitches as List<SoccerPitchMvc.Models.Pitch> ?? new List<SoccerPitchMvc.Models.Pitch>();
+    var timeSlots = ViewBag.TimeSlots as List<SoccerPitchMvc.Models.TimeSlot> ?? new List<SoccerPitchMvc.Models.TimeSlot>();
+    var bookings = ViewBag.Bookings as List<SoccerPitchMvc.Models.Booking> ?? new List<SoccerPitchMvc.Models.Booking>();
+    var selectedDate = ViewBag.SelectedDate as string;
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold text-dark mb-1"><i class="bi bi-calendar3 text-success"></i> Lịch biểu Đặt sân</h2>
+            <p class="text-muted">Xem trực quan trạng thái đặt sân theo ngày</p>
+        </div>
+        <div>
+            <a asp-action="Create" class="btn btn-success shadow-sm">
+                <i class="bi bi-plus-lg"></i> Đặt Sân Mới
+            </a>
+        </div>
+    </div>
+
+    <!-- Date selector -->
+    <div class="card shadow-sm border-0 mb-4 bg-light">
+        <div class="card-body py-3">
+            <form method="get" asp-action="Calendar" class="row align-items-center g-3">
+                <div class="col-auto">
+                    <label for="dateSelect" class="form-label fw-semibold mb-0"><i class="bi bi-filter"></i> Chọn ngày xem:</label>
+                </div>
+                <div class="col-auto">
+                    <input type="date" name="date" id="dateSelect" class="form-control" value="@selectedDate" onchange="this.form.submit()" />
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Xem</button>
+                </div>
+                <div class="col-auto">
+                    <a asp-action="Calendar" asp-route-date="@DateTime.Today.ToString("yyyy-MM-dd")" class="btn btn-outline-secondary">Hôm Nay</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Calendar Matrix Grid -->
+    <div class="card shadow border-0 rounded-3">
+        <div class="card-header bg-dark text-white py-3">
+            <h5 class="fw-bold mb-0"><i class="bi bi-grid-3x3-gap"></i> Lưới Trực Quan Đặt Sân Ngày: @selectedDate</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped align-middle mb-0 text-center">
+                    <thead class="table-secondary">
+                        <tr>
+                            <th class="py-3 text-start px-4" style="min-width: 150px;">Sân Pickleball</th>
+                            @foreach (var slot in timeSlots)
+                            {
+                                <th class="py-3">
+                                    <div class="fw-bold">@slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")</div>
+                                    @if (slot.PriceOverride.HasValue)
+                                    {
+                                        <div class="small text-danger fw-semibold">(@slot.PriceOverride.Value.ToString("N0")đ)</div>
+                                    }
+                                    else
+                                    {
+                                        <div class="small text-muted fw-normal">(Theo sân)</div>
+                                    }
+                                </th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!pitches.Any())
+                        {
+                            <tr>
+                                <td colspan="@(timeSlots.Count + 1)" class="text-center py-5 text-muted">
+                                    Chưa có sân Pickleball nào hoạt động.
+                                </td>
+                            </tr>
+                        }
+                        else if (!timeSlots.Any())
+                        {
+                            <tr>
+                                <td colspan="@(timeSlots.Count + 1)" class="text-center py-5 text-muted">
+                                    Chưa cấu hình khung giờ nào trên hệ thống.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var pitch in pitches)
+                            {
+                                <tr>
+                                    <td class="fw-bold text-dark text-start px-4 py-3 bg-light">
+                                        @pitch.Name
+                                        <div class="small text-muted fw-normal">Sân @pitch.Type người</div>
+                                        <div class="small text-success fw-semibold">@pitch.PricePerHour.ToString("N0")đ/h</div>
+                                    </td>
+                                    @foreach (var slot in timeSlots)
+                                    {
+                                        // Kiểm tra xem khung giờ này có thuộc về sân này không
+                                        bool isSlotForPitch = slot.PitchId == pitch.Id;
+                                        
+                                        if (isSlotForPitch)
+                                        {
+                                            // Tìm lượt đặt sân tương ứng
+                                            var booking = bookings.FirstOrDefault(b => b.PitchId == pitch.Id && b.TimeSlotId == slot.Id);
+                                            
+                                            if (booking != null)
+                                            {
+                                                <td class="p-2 bg-danger-subtle border-danger">
+                                                    <div class="p-2 rounded bg-danger text-white shadow-sm">
+                                                        <div class="fw-bold text-truncate" title="@booking.Customer.FullName">
+                                                            <i class="bi bi-person-fill"></i> @booking.Customer.FullName
+                                                        </div>
+                                                        <div class="small opacity-75">
+                                                            @if (booking.Status == 0)
+                                                            {
+                                                                <span>Chờ duyệt</span>
+                                                            }
+                                                            else if (booking.Status == 1)
+                                                            {
+                                                                <span>Đã duyệt</span>
+                                                            }
+                                                            else if (booking.Status == 2)
+                                                            {
+                                                                <span>Đã thanh toán</span>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            }
+                                            else
+                                            {
+                                                <td class="p-2 bg-success-subtle border-success">
+                                                    <div class="p-2 rounded bg-success text-white shadow-sm opacity-90">
+                                                        <div class="fw-semibold"><i class="bi bi-unlock-fill"></i> Trống</div>
+                                                        <a asp-action="Create" class="btn btn-light btn-sm mt-1 py-0 px-2 fw-semibold text-success shadow-xs" style="font-size: 0.75rem;">Đặt Ngay</a>
+                                                    </div>
+                                                </td>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <td class="p-2 bg-light text-muted small">
+                                                <i class="bi bi-slash-circle"></i> K/H
+                                            </td>
+                                        }
+                                    }
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

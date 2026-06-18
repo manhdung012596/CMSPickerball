@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Elite Pickleball Club</title>
+    
+    <!-- CDNs -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --dark-blue: #1e293b;
+            --dark-slate: #0f172a;
+            --lime-green: #84cc16;
+            --lime-bright: #9ef01a;
+            --light-bg: #f8fafc;
+            --border-color: #e2e8f0;
+            --card-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--light-bg);
+            color: #334155;
+            margin: 0;
+            padding-top: 85px; /* Space for fixed navbar */
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        h1, h2, h3, h4, h5, h6, .brand-logo, .btn-booking, .btn-primary-custom {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Premium Navbar */
+        .navbar-custom {
+            background-color: var(--dark-slate);
+            border-bottom: 2px solid rgba(132, 204, 22, 0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1030;
+            padding: 15px 0;
+            transition: var(--transition-smooth);
+        }
+
+        .brand-logo {
+            font-size: 24px;
+            font-weight: 800;
+            color: #ffffff;
+            text-decoration: none;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand-logo span {
+            color: var(--lime-bright);
+        }
+
+        .nav-link-custom {
+            color: rgba(255, 255, 255, 0.85);
+            font-weight: 500;
+            font-size: 15px;
+            padding: 8px 16px;
+            text-decoration: none;
+            transition: var(--transition-smooth);
+            border-bottom: 2px solid transparent;
+        }
+
+        .nav-link-custom:hover, .nav-link-custom.active {
+            color: var(--lime-bright);
+        }
+
+        .btn-booking {
+            background-color: var(--lime-bright);
+            color: var(--dark-slate);
+            font-weight: 700;
+            font-size: 15px;
+            padding: 10px 24px;
+            border-radius: 50px;
+            text-decoration: none;
+            border: none;
+            box-shadow: 0 4px 12px rgba(132, 204, 22, 0.25);
+            transition: var(--transition-smooth);
+        }
+
+        .btn-booking:hover {
+            background-color: #ffffff;
+            color: var(--dark-slate);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-login-custom {
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 15px;
+            text-decoration: none;
+            padding: 10px 20px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 50px;
+            margin-left: 10px;
+            transition: var(--transition-smooth);
+        }
+
+        .btn-login-custom:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--lime-bright);
+            border-color: var(--lime-bright);
+        }
+
+        /* Footer */
+        .footer-custom {
+            background-color: var(--dark-slate);
+            color: #94a3b8;
+            padding: 60px 0 30px;
+            border-top: 3px solid var(--lime-green);
+            margin-top: auto;
+        }
+
+        .footer-logo {
+            font-size: 26px;
+            font-weight: 800;
+            color: #ffffff;
+            text-decoration: none;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+
+        .footer-logo span {
+            color: var(--lime-bright);
+        }
+
+        .footer-heading {
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .footer-link {
+            color: #94a3b8;
+            text-decoration: none;
+            transition: var(--transition-smooth);
+            display: block;
+            margin-bottom: 12px;
+        }
+
+        .footer-link:hover {
+            color: var(--lime-bright);
+            padding-left: 5px;
+        }
+
+        .footer-contact-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .footer-contact-item i {
+            color: var(--lime-bright);
+            font-size: 16px;
+            margin-top: 3px;
+        }
+
+        .social-icons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .social-icon-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: var(--transition-smooth);
+        }
+
+        .social-icon-btn:hover {
+            background-color: var(--lime-bright);
+            color: var(--dark-slate);
+            transform: translateY(-3px);
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 30px;
+            margin-top: 40px;
+            font-size: 14px;
+        }
+
+        /* Utilities */
+        .btn-primary-custom {
+            background: linear-gradient(135deg, var(--lime-green) 0%, #76b813 100%);
+            color: #ffffff;
+            font-weight: 700;
+            padding: 12px 30px;
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 4px 15px rgba(132, 204, 22, 0.2);
+            transition: var(--transition-smooth);
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(132, 204, 22, 0.3);
+            color: #ffffff;
+            background: var(--dark-slate);
+        }
+    </style>
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container">
+            <a class="brand-logo" href="/Home">
+                <i class="fa-solid fa-table-tennis-paddle-ball text-success fs-3"></i>
+                Elite<span>Pickleball</span>
+            </a>
+            
+            <button class="navbar-toggler border-0 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <div class="navbar-nav mx-auto">
+                    <a class="nav-link-custom @(ViewContext.ActionDescriptor.RouteValues["action"] == "Index" ? "active" : "")" href="/Home/Index">Trang chủ</a>
+                    <a class="nav-link-custom @(ViewContext.ActionDescriptor.RouteValues["action"] == "Pitches" ? "active" : "")" href="/Home/Pitches">Sân bãi</a>
+                    <a class="nav-link-custom @(ViewContext.ActionDescriptor.RouteValues["action"] == "Booking" ? "active" : "")" href="/Home/Booking">Đặt sân</a>
+                    <a class="nav-link-custom @(ViewContext.ActionDescriptor.RouteValues["action"] == "Contact" ? "active" : "")" href="/Home/Contact">Liên hệ</a>
+                </div>
+                <div class="d-flex align-items-center">
+                    <a href="/Home/Booking" class="btn-booking">Đặt sân ngay</a>
+                    <a href="/admin/dashboard" class="btn-login-custom"><i class="fa-regular fa-user me-2"></i>Đăng nhập</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main role="main">
+        @RenderBody()
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer-custom">
+        <div class="container">
+            <div class="row g-4">
+                <!-- Info Column -->
+                <div class="col-lg-4 col-md-6">
+                    <a class="footer-logo" href="/Home">Elite<span>Pickleball</span></a>
+                    <p class="mb-4">Hệ thống sân Pickleball chuẩn quốc tế hàng đầu TP.HCM. Sân chơi chuyên nghiệp, dịch vụ cao cấp, ánh sáng hiện đại và phục vụ tận tâm.</p>
+                    <div class="social-icons">
+                        <a href="#" class="social-icon-btn"><i class="fa-brands fa-facebook-f"></i></a>
+                        <a href="#" class="social-icon-btn"><i class="fa-brands fa-tiktok"></i></a>
+                        <a href="#" class="social-icon-btn"><i class="fa-brands fa-youtube"></i></a>
+                        <a href="#" class="social-icon-btn"><i class="fa-brands fa-instagram"></i></a>
+                    </div>
+                </div>
+                
+                <!-- Quick Links -->
+                <div class="col-lg-2 col-md-6 col-6">
+                    <h5 class="footer-heading">Liên kết</h5>
+                    <a href="/Home/Index" class="footer-link">Trang chủ</a>
+                    <a href="/Home/Pitches" class="footer-link">Sân bãi</a>
+                    <a href="/Home/Booking" class="footer-link">Đặt sân</a>
+                    <a href="/Home/Contact" class="footer-link">Liên hệ</a>
+                    <a href="/Customer/Profile" class="footer-link">Trang cá nhân</a>
+                </div>
+
+                <!-- Policies -->
+                <div class="col-lg-2 col-md-6 col-6">
+                    <h5 class="footer-heading">Chính sách</h5>
+                    <a href="#" class="footer-link">Quy định sân đấu</a>
+                    <a href="#" class="footer-link">Chính sách đổi trả lịch</a>
+                    <a href="#" class="footer-link">Chính sách thành viên</a>
+                    <a href="#" class="footer-link">Điều khoản dịch vụ</a>
+                </div>
+
+                <!-- Contact Info -->
+                <div class="col-lg-4 col-md-6">
+                    <h5 class="footer-heading">Thông tin liên hệ</h5>
+                    <div class="footer-contact-item">
+                        <i class="fa-solid fa-location-dot"></i>
+                        <span>123 Đường ABC, Phường XYZ, Quận 1, TP. Hồ Chí Minh</span>
+                    </div>
+                    <div class="footer-contact-item">
+                        <i class="fa-solid fa-phone"></i>
+                        <span>090.123.456 (Hotline đặt sân)</span>
+                    </div>
+                    <div class="footer-contact-item">
+                        <i class="fa-solid fa-envelope"></i>
+                        <span>info@pickleballclub.com</span>
+                    </div>
+                    <div class="footer-contact-item">
+                        <i class="fa-solid fa-clock"></i>
+                        <span>06:00 - 22:00 (Tất cả các ngày trong tuần)</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom text-center">
+                <div class="row">
+                    <div class="col-md-6 text-md-start mb-2 mb-md-0">
+                        &copy; 2026 Elite Pickleball Club. Bảo lưu mọi quyền.
+                    </div>
+                    <div class="col-md-6 text-md-end text-muted">
+                        Thiết kế bởi <span class="text-white fw-bold">Antigravity AI</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- BS JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

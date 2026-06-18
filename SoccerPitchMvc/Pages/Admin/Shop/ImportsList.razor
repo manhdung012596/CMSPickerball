@@ -1,0 +1,623 @@
+@page "/admin/shop/imports"
+@layout AdminLayout
+@using SoccerPitchMvc.Models
+@using SoccerPitchMvc.Services
+@inject IShopService ShopService
+@inject ToastService Toast
+@inject NavigationManager NavigationManager
+
+<PageTitle>Quản lý nhập hàng - Shop</PageTitle>
+
+<div class="page-header d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h1 class="page-title"><i class="fa-solid fa-truck-loading me-2 text-primary"></i>Quản lý Nhập hàng</h1>
+        <p class="text-muted mb-0">Tạo phiếu nhập kho và quản lý giá vốn sản phẩm từ các nhà cung cấp</p>
+    </div>
+    <button class="btn btn-primary px-3" @onclick="OpenAddModal">
+        <i class="fa-solid fa-plus me-1"></i> Nhập hàng mới
+    </button>
+</div>
+
+<!-- Filters -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-3">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Tìm kiếm</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-search"></i></span>
+                    <input type="text" class="form-control border-start-0" placeholder="Mã phiếu, nhà cung cấp..."
+                           @bind-value="SearchText" @bind-value:event="oninput" />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Từ ngày</label>
+                <input type="date" class="form-control" @bind="StartDate" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Đến ngày</label>
+                <input type="date" class="form-control" @bind="EndDate" />
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button class="btn btn-outline-secondary w-100" @onclick="ResetFilters">
+                    <i class="fas fa-undo me-1"></i>Làm mới
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Imports Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        @if (IsLoading)
+        {
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <div class="mt-2 text-muted">Đang tải danh sách phiếu nhập...</div>
+            </div>
+        }
+        else if (!FilteredList.Any())
+        {
+            <div class="text-center py-5">
+                <i class="fa-solid fa-dolly fa-3x text-muted mb-3 d-block"></i>
+                <p class="text-muted">Không tìm thấy phiếu nhập hàng nào.</p>
+                <button class="btn btn-primary" @onclick="OpenAddModal">
+                    <i class="fa-solid fa-plus me-1"></i>Tạo phiếu nhập mới
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="40">#</th>
+                            <th>Mã phiếu nhập</th>
+                            <th>Nhà cung cấp</th>
+                            <th class="text-center">Ngày nhập</th>
+                            <th class="text-center">Số mặt hàng</th>
+                            <th class="text-end">Tổng tiền nhập</th>
+                            <th>Ghi chú</th>
+                            <th width="110" class="text-center">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var (imp, idx) in FilteredList.Select((i, idx) => (i, idx + 1)))
+                        {
+                            <tr>
+                                <td class="text-muted fw-semibold small">@idx</td>
+                                <td class="fw-bold text-primary">@imp.ImportCode</td>
+                                <td class="fw-semibold">@(imp.SupplierName ?? "Không xác định")</td>
+                                <td class="text-center small">@imp.ImportDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td class="text-center">@imp.ItemCount</td>
+                                <td class="text-end fw-bold text-success">@imp.TotalAmount.ToString("N0")đ</td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(imp.Notes))
+                                    {
+                                        <span class="text-muted small text-truncate d-inline-block" style="max-width: 200px;" title="@imp.Notes">
+                                            @imp.Notes
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">—</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-info" title="Xem chi tiết"
+                                                @onclick="() => OpenDetailsModal(imp.Id)">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger" title="Xóa phiếu (Trừ kho)"
+                                                @onclick="() => ConfirmDelete(imp)">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer bg-light text-muted small">
+                Hiển thị <strong>@FilteredList.Count</strong> / @Imports.Count phiếu nhập
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Details Modal -->
+@if (ShowDetailsModal && SelectedImport != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="fa-solid fa-receipt me-2"></i>Chi tiết phiếu nhập @SelectedImport.ImportCode
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseDetailsModal"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <strong>Mã phiếu:</strong> <span class="text-primary fw-bold">@SelectedImport.ImportCode</span>
+                            <br />
+                            <strong>Ngày tạo:</strong> @SelectedImport.ImportDate.ToString("dd/MM/yyyy HH:mm")
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Nhà cung cấp:</strong> @(SelectedImport.SupplierName ?? "Nhà cung cấp tự do")
+                            <br />
+                            <strong>Tổng tiền hàng:</strong> <span class="text-success fw-bold">@SelectedImport.TotalAmount.ToString("N0")đ</span>
+                        </div>
+                    </div>
+
+                    <label class="text-muted small text-uppercase fw-semibold mb-2 d-block">Danh sách sản phẩm nhập</label>
+                    <div class="table-responsive border rounded">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="40">#</th>
+                                    <th>Tên sản phẩm</th>
+                                    <th class="text-end" width="130">Giá nhập</th>
+                                    <th class="text-center" width="100">Số lượng</th>
+                                    <th class="text-end" width="150">Thành tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var (item, idx) in SelectedImport.ImportItems.Select((im, i) => (im, i + 1)))
+                                {
+                                    <tr>
+                                        <td class="text-muted small">@idx</td>
+                                        <td class="fw-bold">@item.ProductName</td>
+                                        <td class="text-end text-muted">@item.PurchasePrice.ToString("N0")đ</td>
+                                        <td class="text-center fw-semibold">@item.Quantity</td>
+                                        <td class="text-end fw-bold text-success">@item.TotalPrice.ToString("N0")đ</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(SelectedImport.Notes))
+                    {
+                        <div class="alert alert-warning py-2 mb-0 mt-3 small">
+                            <i class="fa-regular fa-comment-dots me-1"></i>
+                            <strong>Ghi chú:</strong> @SelectedImport.Notes
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer bg-light">
+                    <button class="btn btn-outline-secondary" @onclick="CloseDetailsModal">Đóng lại</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Create Import Modal -->
+@if (ShowAddModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5); overflow-y: auto;">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="fa-solid fa-plus-circle me-2"></i>Tạo phiếu nhập kho mới
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseAddModal"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Tên nhà cung cấp</label>
+                            <input type="text" class="form-control form-control-sm" placeholder="Nhập tên nhà cung cấp..."
+                                   @bind="NewImportSupplier" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Ghi chú nhập hàng</label>
+                            <input type="text" class="form-control form-control-sm" placeholder="Ghi chú (đợt nhập hàng, lô hàng...)"
+                                   @bind="NewImportNotes" />
+                        </div>
+                    </div>
+
+                    <!-- Line Draft Form -->
+                    <div class="card bg-light border-0 mb-4">
+                        <div class="card-body p-3">
+                            <label class="form-label fw-bold text-muted small text-uppercase mb-2"><i class="fa-solid fa-cart-plus me-1"></i>Chọn sản phẩm thêm vào phiếu</label>
+                            <div class="row g-2 align-items-end">
+                                <div class="col-md-5">
+                                    <label class="form-label small mb-1">Sản phẩm</label>
+                                    <select class="form-select form-select-sm" @bind="DraftProductId" @bind:after="OnDraftProductChanged">
+                                        <option value="0">-- Chọn sản phẩm --</option>
+                                        @foreach (var prod in ActiveProducts)
+                                        {
+                                            <option value="@prod.Id">@prod.Name (@prod.SKU)</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small mb-1">Giá nhập</label>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" class="form-control text-end" @bind="DraftPurchasePrice" />
+                                        <span class="input-group-text">đ</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small mb-1">Số lượng</label>
+                                    <input type="number" class="form-control form-control-sm text-center" @bind="DraftQuantity" min="1" />
+                                </div>
+                                <div class="col-md-2">
+                                    <button class="btn btn-sm btn-primary w-100" @onclick="AddDraftLine">
+                                        <i class="fa-solid fa-plus me-1"></i>Thêm
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Draft Table -->
+                    <label class="form-label fw-bold text-muted small text-uppercase mb-2">Chi tiết phiếu nháp</label>
+                    <div class="table-responsive border rounded mb-3" style="max-height: 250px;">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="40">#</th>
+                                    <th>Tên sản phẩm</th>
+                                    <th class="text-end" width="120">Giá nhập</th>
+                                    <th class="text-center" width="90">Số lượng</th>
+                                    <th class="text-end" width="130">Thành tiền</th>
+                                    <th width="50" class="text-center">Xóa</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (!DraftLines.Any())
+                                {
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4 text-muted small">
+                                            Chưa có sản phẩm nào được chọn vào phiếu nhập.
+                                        </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    @foreach (var (line, idx) in DraftLines.Select((l, i) => (l, i + 1)))
+                                    {
+                                        <tr>
+                                            <td class="text-muted small">@idx</td>
+                                            <td class="fw-bold">@line.ProductName</td>
+                                            <td class="text-end">@line.PurchasePrice.ToString("N0")đ</td>
+                                            <td class="text-center">@line.Quantity</td>
+                                            <td class="text-end fw-semibold text-success">@line.TotalPrice.ToString("N0")đ</td>
+                                            <td class="text-center">
+                                                <button class="btn btn-sm btn-link text-danger p-0" @onclick="() => RemoveDraftLine(line)">
+                                                    <i class="fa-solid fa-trash-can"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center bg-light p-3 rounded">
+                        <span class="fw-semibold text-dark">Tổng giá trị phiếu nhập:</span>
+                        <strong class="fs-4 text-danger">@NewImportTotal.ToString("N0")đ</strong>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button class="btn btn-outline-secondary" @onclick="CloseAddModal">Hủy</button>
+                    <button class="btn btn-primary" @onclick="SubmitImport" disabled="@(!DraftLines.Any() || IsSubmitting)">
+                        @if (IsSubmitting)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                        }
+                        <i class="fa-solid fa-circle-check me-1"></i>Lập phiếu & Nhập kho
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Delete Confirmation Modal -->
+@if (ShowDeleteModal && ImportToDelete != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Xác nhận xóa phiếu nhập
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="() => ShowDeleteModal = false"></button>
+                </div>
+                <div class="modal-body py-3">
+                    <p>Bạn có chắc chắn muốn xóa phiếu nhập:</p>
+                    <p class="fw-bold text-danger fs-5 mb-1">@ImportToDelete.ImportCode</p>
+                    <p class="text-muted">Nhà cung cấp: <strong class="text-dark">@(ImportToDelete.SupplierName ?? "Không xác định")</strong></p>
+                    <p class="text-muted">Tổng tiền: <strong class="text-dark">@ImportToDelete.TotalAmount.ToString("N0")đ</strong></p>
+                    
+                    <div class="alert alert-danger mt-3 mb-0 py-2 small">
+                        <i class="fa-solid fa-triangle-exclamation me-1"></i>
+                        <strong>Cảnh báo quan trọng:</strong> Khi xóa phiếu nhập, hệ thống sẽ tự động **khấu trừ số lượng tồn kho** của các sản phẩm tương ứng. Nếu sản phẩm hiện tại có số tồn kho nhỏ hơn số lượng đã nhập trong phiếu, hành động này sẽ bị chặn để tránh tồn kho âm.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary" @onclick="() => ShowDeleteModal = false">Hủy</button>
+                    <button class="btn btn-danger" @onclick="ExecuteDelete" disabled="@IsDeleting">
+                        @if (IsDeleting) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                        <i class="fas fa-trash me-1"></i>Xác nhận xóa & Khấu trừ kho
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<StockImportListDto> Imports = new();
+    private List<ProductListDto> ActiveProducts = new();
+
+    private bool IsLoading = true;
+    private string SearchText = string.Empty;
+    private DateTime? StartDate;
+    private DateTime? EndDate;
+
+    // Details Modal
+    private bool ShowDetailsModal = false;
+    private StockImport? SelectedImport;
+
+    // Add Modal State
+    private bool ShowAddModal = false;
+    private bool IsSubmitting = false;
+    private string NewImportSupplier = string.Empty;
+    private string NewImportNotes = string.Empty;
+
+    // Add Line State
+    private int DraftProductId = 0;
+    private decimal DraftPurchasePrice = 0;
+    private int DraftQuantity = 1;
+    private List<DraftImportLine> DraftLines = new();
+
+    public class DraftImportLine
+    {
+        public int ProductId { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+        public decimal PurchasePrice { get; set; }
+        public int Quantity { get; set; }
+        public decimal TotalPrice => PurchasePrice * Quantity;
+    }
+
+    // Delete Modal
+    private bool ShowDeleteModal = false;
+    private bool IsDeleting = false;
+    private StockImportListDto? ImportToDelete;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+        ActiveProducts = await ShopService.GetProductsAsync(status: 1);
+    }
+
+    private async Task LoadData()
+    {
+        IsLoading = true;
+        Imports = await ShopService.GetStockImportsAsync();
+        IsLoading = false;
+    }
+
+    private List<StockImportListDto> FilteredList
+    {
+        get
+        {
+            var q = Imports.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                var txt = SearchText.Trim().ToLower();
+                q = q.Where(i => i.ImportCode.ToLower().Contains(txt) 
+                              || (i.SupplierName != null && i.SupplierName.ToLower().Contains(txt)));
+            }
+
+            if (StartDate.HasValue)
+            {
+                q = q.Where(i => i.ImportDate >= StartDate.Value.Date);
+            }
+
+            if (EndDate.HasValue)
+            {
+                q = q.Where(i => i.ImportDate <= EndDate.Value.Date.AddDays(1).AddTicks(-1));
+            }
+
+            return q.ToList();
+        }
+    }
+
+    private void ResetFilters()
+    {
+        SearchText = string.Empty;
+        StartDate = null;
+        EndDate = null;
+    }
+
+    private async Task OpenDetailsModal(int id)
+    {
+        SelectedImport = await ShopService.GetStockImportByIdAsync(id);
+        if (SelectedImport != null)
+        {
+            ShowDetailsModal = true;
+        }
+        else
+        {
+            Toast.ShowError("Không tìm thấy phiếu nhập hàng.");
+        }
+    }
+
+    private void CloseDetailsModal()
+    {
+        ShowDetailsModal = false;
+        SelectedImport = null;
+    }
+
+    private void OpenAddModal()
+    {
+        NewImportSupplier = string.Empty;
+        NewImportNotes = string.Empty;
+        DraftProductId = 0;
+        DraftPurchasePrice = 0;
+        DraftQuantity = 1;
+        DraftLines.Clear();
+        ShowAddModal = true;
+    }
+
+    private void CloseAddModal()
+    {
+        ShowAddModal = false;
+    }
+
+    private void OnDraftProductChanged()
+    {
+        if (DraftProductId > 0)
+        {
+            var prod = ActiveProducts.FirstOrDefault(x => x.Id == DraftProductId);
+            if (prod != null)
+            {
+                DraftPurchasePrice = prod.PurchasePrice;
+            }
+        }
+        else
+        {
+            DraftPurchasePrice = 0;
+        }
+    }
+
+    private void AddDraftLine()
+    {
+        if (DraftProductId <= 0)
+        {
+            Toast.ShowError("Vui lòng chọn sản phẩm.");
+            return;
+        }
+        if (DraftQuantity <= 0)
+        {
+            Toast.ShowError("Số lượng nhập phải lớn hơn 0.");
+            return;
+        }
+        if (DraftPurchasePrice < 0)
+        {
+            Toast.ShowError("Giá nhập không thể nhỏ hơn 0.");
+            return;
+        }
+
+        var prod = ActiveProducts.FirstOrDefault(x => x.Id == DraftProductId);
+        if (prod == null) return;
+
+        var existing = DraftLines.FirstOrDefault(l => l.ProductId == DraftProductId);
+        if (existing != null)
+        {
+            existing.Quantity += DraftQuantity;
+            existing.PurchasePrice = DraftPurchasePrice; // Update to latest price
+        }
+        else
+        {
+            DraftLines.Add(new DraftImportLine
+            {
+                ProductId = DraftProductId,
+                ProductName = prod.Name,
+                PurchasePrice = DraftPurchasePrice,
+                Quantity = DraftQuantity
+            });
+        }
+
+        // Reset draft inputs
+        DraftProductId = 0;
+        DraftPurchasePrice = 0;
+        DraftQuantity = 1;
+        Toast.ShowSuccess("Đã thêm sản phẩm vào danh sách phiếu nhập.");
+    }
+
+    private void RemoveDraftLine(DraftImportLine line)
+    {
+        DraftLines.Remove(line);
+    }
+
+    private decimal NewImportTotal => DraftLines.Sum(l => l.TotalPrice);
+
+    private async Task SubmitImport()
+    {
+        if (!DraftLines.Any()) return;
+
+        IsSubmitting = true;
+        try
+        {
+            var dto = new CreateStockImportDto
+            {
+                SupplierName = string.IsNullOrWhiteSpace(NewImportSupplier) ? "Nhà cung cấp tự do" : NewImportSupplier.Trim(),
+                Notes = NewImportNotes,
+                ImportItems = DraftLines.Select(l => new CreateStockImportItemDto
+                {
+                    ProductId = l.ProductId,
+                    Quantity = l.Quantity,
+                    PurchasePrice = l.PurchasePrice
+                }).ToList()
+            };
+
+            await ShopService.CreateStockImportAsync(dto);
+            Toast.ShowSuccess("Tạo phiếu nhập hàng và cộng tồn kho thành công!");
+            ShowAddModal = false;
+            await LoadData();
+            // Reload active products to update prices and stock levels
+            ActiveProducts = await ShopService.GetProductsAsync(status: 1);
+        }
+        catch (Exception ex)
+        {
+            Toast.ShowError($"Lập phiếu nhập hàng thất bại: {ex.Message}");
+        }
+        finally
+        {
+            IsSubmitting = false;
+        }
+    }
+
+    private void ConfirmDelete(StockImportListDto imp)
+    {
+        ImportToDelete = imp;
+        ShowDeleteModal = true;
+    }
+
+    private async Task ExecuteDelete()
+    {
+        if (ImportToDelete == null) return;
+
+        IsDeleting = true;
+        try
+        {
+            bool success = await ShopService.DeleteStockImportAsync(ImportToDelete.Id);
+            if (success)
+            {
+                Toast.ShowSuccess($"Đã xóa phiếu nhập «{ImportToDelete.ImportCode}» và hoàn trả số lượng kho.");
+                await LoadData();
+                ActiveProducts = await ShopService.GetProductsAsync(status: 1);
+            }
+            else
+            {
+                Toast.ShowError("Không thể xóa phiếu nhập.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Toast.ShowError($"Lỗi khi xóa: {ex.Message}");
+        }
+        finally
+        {
+            IsDeleting = false;
+            ShowDeleteModal = false;
+            ImportToDelete = null;
+        }
+    }
+}

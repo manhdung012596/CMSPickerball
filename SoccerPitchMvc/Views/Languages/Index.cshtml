@@ -1,0 +1,190 @@
+@model IEnumerable<SoccerPitchMvc.Models.Language>
+
+@{
+    ViewData["Title"] = "Quản lý Ngôn ngữ";
+    var currentPage = ViewBag.CurrentPage;
+    var totalPages = ViewBag.TotalPages;
+    var totalItems = ViewBag.TotalItems;
+    var pageSize = ViewBag.PageSize;
+    var searchTerm = ViewBag.SearchTerm;
+    
+    // Tính toán khoảng hiển thị
+    int startItem = totalItems == 0 ? 0 : (currentPage - 1) * pageSize + 1;
+    int endItem = Math.Min(currentPage * pageSize, totalItems);
+}
+
+<div class="container-fluid">
+    <!-- Tiêu đề trang -->
+    <div class="mb-4">
+        <h2 class="fw-bold text-dark mb-1">Quản lý Ngôn ngữ</h2>
+        <p class="text-muted">Quản lý danh sách ngôn ngữ, mã và biểu tượng (doanh viên hệ dùng)</p>
+    </div>
+
+    <!-- Thanh công cụ (Toolbar) -->
+    <div class="card shadow-sm border-0 mb-4 rounded-3">
+        <div class="card-body py-3 px-4">
+            <div class="row align-items-center g-3">
+                <!-- Nút thêm mới -->
+                <div class="col-md-6 text-start">
+                    <button class="btn btn-primary px-4 fw-semibold shadow-sm">
+                        <i class="bi bi-plus-lg"></i> Thêm mới
+                    </button>
+                </div>
+                
+                <!-- Tìm kiếm và Dropdown Hành động -->
+                <div class="col-md-6 text-end">
+                    <form method="get" asp-action="Index" class="d-inline-flex gap-2 align-items-center justify-content-end w-100">
+                        <!-- Dropdown Hành động -->
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Hành động
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-2">
+                                <li><a class="dropdown-item" href="#"><i class="bi bi-check-circle text-success me-2"></i> Kích hoạt tất cả</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="bi bi-x-circle text-danger me-2"></i> Ngừng đăng tất cả</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash me-2"></i> Xóa các mục đã chọn</a></li>
+                            </ul>
+                        </div>
+
+                        <!-- Ô tìm kiếm -->
+                        <div class="input-group" style="max-width: 250px;">
+                            <input type="text" name="searchTerm" class="form-control" placeholder="Tìm kiếm..." value="@searchTerm" />
+                            <button class="btn btn-outline-primary" type="submit">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                        @if (!string.IsNullOrEmpty(searchTerm))
+                        {
+                            <a asp-action="Index" class="btn btn-outline-secondary" title="Xóa bộ lọc">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </a>
+                        }
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bảng dữ liệu (Data Table) -->
+    <div class="card shadow-sm border-0 rounded-3 mb-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-hover align-middle mb-0">
+                    <thead class="table-light text-uppercase font-monospace" style="font-size: 0.85rem;">
+                        <tr>
+                            <th class="py-3 text-center" style="width: 140px;">Mã ngôn ngữ</th>
+                            <th class="py-3 px-4">Tên ngôn ngữ</th>
+                            <th class="py-3 px-4">Tên thay thế</th>
+                            <th class="py-3 px-4">Mô tả</th>
+                            <th class="py-3 text-center" style="width: 100px;">Sắp xếp</th>
+                            <th class="py-3 text-center" style="width: 160px;">Trạng thái</th>
+                            <th class="py-3 text-center" style="width: 120px;">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    <i class="bi bi-translate display-4 d-block mb-3 text-secondary"></i>
+                                    Không tìm thấy ngôn ngữ nào phù hợp.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <!-- Mã ngôn ngữ kèm icon cờ quốc gia đặc trưng -->
+                                    <td class="text-center py-3">
+                                        @if (item.Code.ToUpper() == "VI")
+                                        {
+                                            <span class="badge bg-light text-dark border px-2 py-1 fs-6">🇻🇳 VI</span>
+                                        }
+                                        else if (item.Code.ToUpper() == "EN")
+                                        {
+                                            <span class="badge bg-light text-dark border px-2 py-1 fs-6">🇬🇧 EN</span>
+                                        }
+                                        else if (item.Code.ToUpper() == "CN")
+                                        {
+                                            <span class="badge bg-light text-dark border px-2 py-1 fs-6">🇨🇳 CN</span>
+                                        }
+                                        else if (item.Code.ToUpper() == "FR")
+                                        {
+                                            <span class="badge bg-light text-dark border px-2 py-1 fs-6">🇫🇷 FR</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-light text-dark border px-2 py-1 fs-6">🌐 @item.Code</span>
+                                        }
+                                    </td>
+                                    <td class="fw-bold text-dark px-4">@item.Name</td>
+                                    <td class="text-muted px-4">@item.AlternateName</td>
+                                    <td class="px-4 text-truncate" style="max-width: 250px;">@item.Description</td>
+                                    <td class="text-center">@item.SortOrder</td>
+                                    <td class="text-center">
+                                        @if (item.Status == 1)
+                                        {
+                                            <span class="badge bg-success-subtle text-success px-3 py-2 border border-success-subtle rounded-pill">
+                                                <i class="bi bi-cloud-arrow-up-fill"></i> Đang Đăng
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger-subtle text-danger px-3 py-2 border border-danger-subtle rounded-pill">
+                                                <i class="bi bi-cloud-slash-fill"></i> Ngừng đăng
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="d-flex justify-content-center gap-1">
+                                            <button class="btn btn-outline-primary btn-sm border-0" title="Chỉnh sửa">
+                                                <i class="bi bi-pencil-fill"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm border-0" title="Xóa bỏ">
+                                                <i class="bi bi-trash-fill"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Phân trang (Pagination) -->
+    <div class="d-flex justify-content-between align-items-center px-2">
+        <div class="text-muted small">
+            Hiển thị @startItem tới @endItem của @totalItems đối tượng
+        </div>
+
+        @if (totalPages > 1)
+        {
+            <nav aria-label="Page navigation">
+                <ul class="pagination pagination-sm mb-0">
+                    <!-- Nút Previous -->
+                    <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-searchTerm="@searchTerm" asp-route-page="@(currentPage - 1)">Previous</a>
+                    </li>
+
+                    @for (int i = 1; i <= totalPages; i++)
+                    {
+                        <li class="page-item @(currentPage == i ? "active" : "")">
+                            <a class="page-link" asp-action="Index" asp-route-searchTerm="@searchTerm" asp-route-page="@i">@i</a>
+                        </li>
+                    }
+
+                    <!-- Nút Next -->
+                    <li class="page-item @(currentPage >= totalPages ? "disabled" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-searchTerm="@searchTerm" asp-route-page="@(currentPage + 1)">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    </div>
+</div>

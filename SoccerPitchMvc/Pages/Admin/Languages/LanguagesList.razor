@@ -1,0 +1,252 @@
+@page "/admin/languages"
+@layout AdminLayout
+@inject SoccerPitchMvc.Services.ILanguageService LanguageService
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold text-dark mb-1"><i class="fa-solid fa-language text-success"></i> Quản lý Ngôn Ngữ</h2>
+            <p class="text-muted">Danh sách và cấu hình các ngôn ngữ hỗ trợ trên website</p>
+        </div>
+    </div>
+
+    @if (errorMessage != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill"></i> @errorMessage
+            <button type="button" class="btn-close" @onclick="() => errorMessage = null" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (successMessage != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill"></i> @successMessage
+            <button type="button" class="btn-close" @onclick="() => successMessage = null" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <!-- Add Language Form -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-header bg-success text-white py-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-plus-circle-fill"></i> Thêm Ngôn Ngữ Mới</h5>
+                </div>
+                <div class="card-body p-4">
+                    <EditForm Model="@newLang" OnValidSubmit="HandleCreateLanguage">
+                        <div class="mb-3">
+                            <label class="form-label text-dark fw-semibold">Mã Ngôn Ngữ <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" @bind-value="newLang.Code" required placeholder="Ví dụ: VI, EN..." />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-dark fw-semibold">Tên Hiển Thị <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" @bind-value="newLang.Name" required placeholder="Ví dụ: Tiếng Việt..." />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-dark fw-semibold">Tên Thay Thế</label>
+                            <input type="text" class="form-control" @bind-value="newLang.AlternateName" placeholder="Ví dụ: Vietnamese..." />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-dark fw-semibold">Thứ Tự Sắp Xếp</label>
+                            <input type="number" class="form-control" @bind-value="newLang.SortOrder" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-dark fw-semibold">Mô Tả</label>
+                            <textarea class="form-control" rows="2" @bind="newLang.Description" placeholder="Mô tả ngắn..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100 py-2 fw-semibold shadow-sm">
+                            Thêm Mới
+                        </button>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+
+        <!-- Languages Grid -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-header bg-white py-3">
+                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-table text-success"></i> Danh sách ngôn ngữ</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped align-middle mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th class="py-3 px-4">Mã</th>
+                                    <th class="py-3">Tên hiển thị</th>
+                                    <th class="py-3">Tên thay thế</th>
+                                    <th class="py-3">Thứ tự</th>
+                                    <th class="py-3">Trạng thái</th>
+                                    <th class="py-3 text-end px-4">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (languages == null)
+                                {
+                                    <tr>
+                                        <td colspan="6" class="text-center py-5 text-muted">
+                                            <div class="spinner-border text-success" role="status">
+                                                <span class="visually-hidden">Đang tải...</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                                else if (!languages.Any())
+                                {
+                                    <tr>
+                                        <td colspan="6" class="text-center py-5 text-muted">
+                                            Chưa cấu hình ngôn ngữ nào trên hệ thống.
+                                        </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    @foreach (var l in languages)
+                                    {
+                                        <tr>
+                                            <td class="fw-bold text-dark py-3 px-4">@l.Code</td>
+                                            <td class="fw-semibold text-dark">@l.Name</td>
+                                            <td class="text-muted">@l.AlternateName</td>
+                                            <td>@l.SortOrder</td>
+                                            <td>
+                                                @if (l.Status == 1)
+                                                {
+                                                    <span class="badge bg-success">Đang hoạt động</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger">Tạm ngưng</span>
+                                                }
+                                            </td>
+                                            <td class="text-end px-4">
+                                                <div class="btn-group">
+                                                    <button class="btn btn-outline-warning btn-sm" @onclick="() => ToggleStatus(l)">
+                                                        Ẩn/Hiện
+                                                    </button>
+                                                    <button class="btn btn-outline-danger btn-sm" @onclick="() => RequestDelete(l)">
+                                                        Xóa
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+@if (langToDelete != null)
+{
+    <div class="modal-backdrop fade show"></div>
+    <div class="modal fade show d-block" tabindex="-1" style="z-index: 1050;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle-fill"></i> Xác nhận xóa ngôn ngữ</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CancelDelete" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-start py-4">
+                    Bạn có chắc chắn muốn xóa ngôn ngữ <strong class="text-danger">@langToDelete.Name</strong> không?
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-secondary" @onclick="CancelDelete">Hủy</button>
+                    <button type="button" class="btn btn-danger px-4" @onclick="ConfirmDelete">Đồng ý xóa</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Language>? languages;
+    private Language newLang = new() { SortOrder = 1, Status = 1 };
+    private Language? langToDelete;
+    private string? errorMessage;
+    private string? successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadLanguagesAsync();
+    }
+
+    private async Task LoadLanguagesAsync()
+    {
+        languages = await LanguageService.GetLanguagesAsync();
+    }
+
+    private async Task HandleCreateLanguage()
+    {
+        errorMessage = null;
+        successMessage = null;
+
+        if (string.IsNullOrWhiteSpace(newLang.Code) || string.IsNullOrWhiteSpace(newLang.Name))
+        {
+            errorMessage = "Vui lòng điền đầy đủ thông tin mã và tên ngôn ngữ.";
+            return;
+        }
+
+        var success = await LanguageService.CreateLanguageAsync(newLang);
+        if (success)
+        {
+            successMessage = "Thêm ngôn ngữ mới thành công!";
+            newLang = new() { SortOrder = 1, Status = 1 };
+            await LoadLanguagesAsync();
+        }
+        else
+        {
+            errorMessage = "Mã ngôn ngữ này đã tồn tại.";
+        }
+    }
+
+    private async Task ToggleStatus(Language lang)
+    {
+        lang.Status = lang.Status == 1 ? 0 : 1;
+        var success = await LanguageService.UpdateLanguageAsync(lang);
+        if (success)
+        {
+            successMessage = "Cập nhật trạng thái ngôn ngữ thành công!";
+            await LoadLanguagesAsync();
+        }
+        else
+        {
+            errorMessage = "Lỗi khi cập nhật trạng thái.";
+        }
+    }
+
+    private void RequestDelete(Language lang)
+    {
+        langToDelete = lang;
+    }
+
+    private void CancelDelete()
+    {
+        langToDelete = null;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (langToDelete != null)
+        {
+            var success = await LanguageService.DeleteLanguageAsync(langToDelete.Id);
+            if (success)
+            {
+                successMessage = "Xóa ngôn ngữ thành công.";
+                langToDelete = null;
+                await LoadLanguagesAsync();
+            }
+            else
+            {
+                errorMessage = "Có lỗi xảy ra khi xóa ngôn ngữ.";
+                langToDelete = null;
+            }
+        }
+    }
+}

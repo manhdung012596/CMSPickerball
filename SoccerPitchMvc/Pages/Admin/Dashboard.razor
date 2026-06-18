@@ -1,0 +1,295 @@
+@page "/admin/dashboard"
+@layout AdminLayout
+@inject SoccerPitchMvc.Services.IDashboardService DashboardService
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold text-dark mb-1"><i class="bi bi-speedometer2 text-success"></i> Hệ thống Quản lý Sân Pickleball</h2>
+            <p class="text-muted">Báo cáo & Thống kê tình hình hoạt động của trung tâm</p>
+        </div>
+    </div>
+
+    <!-- Stats Cards Row -->
+    <div class="row g-4 mb-4">
+        <!-- Bookings Today Card -->
+        <div class="col-xl-4 col-md-6">
+            <div class="card border-0 shadow-sm rounded-3 bg-gradient bg-primary text-white h-100 position-relative overflow-hidden card-stats">
+                <div class="card-body p-4 position-relative z-1">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase fw-semibold mb-2 opacity-75" style="font-size: 0.85rem;">Đơn đặt hôm nay</h6>
+                            <h2 class="display-5 fw-bold mb-0">@bookingsToday</h2>
+                        </div>
+                        <div class="fs-1"><i class="bi bi-calendar2-check-fill opacity-50"></i></div>
+                    </div>
+                </div>
+                <div class="card-background-pattern"></div>
+            </div>
+        </div>
+
+        <!-- Total Revenue Card -->
+        <div class="col-xl-4 col-md-6">
+            <div class="card border-0 shadow-sm rounded-3 bg-gradient bg-success text-white h-100 position-relative overflow-hidden card-stats">
+                <div class="card-body p-4 position-relative z-1">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase fw-semibold mb-2 opacity-75" style="font-size: 0.85rem;">Doanh thu tích lũy</h6>
+                            <h2 class="display-6 fw-bold mb-0">@totalRevenue.ToString("N0") <span style="font-size: 1.2rem;">đ</span></h2>
+                        </div>
+                        <div class="fs-1"><i class="bi bi-wallet2 opacity-50"></i></div>
+                    </div>
+                </div>
+                <div class="card-background-pattern"></div>
+            </div>
+        </div>
+
+        <!-- Occupancy Rate Card -->
+        <div class="col-xl-4 col-md-6">
+            <div class="card border-0 shadow-sm rounded-3 bg-gradient bg-warning text-dark h-100 position-relative overflow-hidden card-stats">
+                <div class="card-body p-4 position-relative z-1">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase fw-semibold mb-2 opacity-75" style="font-size: 0.85rem;">Tỷ lệ lấp đầy hôm nay</h6>
+                            <h2 class="display-5 fw-bold mb-0">@occupancyRate%</h2>
+                        </div>
+                        <div class="fs-1"><i class="bi bi-percent opacity-50"></i></div>
+                    </div>
+                </div>
+                <div class="card-background-pattern"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graphical Insights Row -->
+    <div class="row g-4">
+        <!-- Revenue 7 Days SVG Chart -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-header bg-white py-3 border-0">
+                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-graph-up text-success"></i> Doanh thu 7 ngày gần nhất (đã thanh toán)</h5>
+                </div>
+                <div class="card-body">
+                    @if (weeklyRevenue == null || !weeklyRevenue.Any())
+                    {
+                        <div class="text-center py-5 text-muted">Không có dữ liệu doanh thu</div>
+                    }
+                    else
+                    {
+                        <div class="svg-chart-container position-relative" style="height: 280px; width: 100%;">
+                            <svg viewBox="0 0 600 220" width="100%" height="100%" preserveAspectRatio="none">
+                                <defs>
+                                    <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stop-color="#198754" stop-opacity="0.25" />
+                                        <stop offset="100%" stop-color="#198754" stop-opacity="0.0" />
+                                    </linearGradient>
+                                </defs>
+                                
+                                <!-- Horizontal Grid Lines -->
+                                <line x1="50" y1="20" x2="580" y2="20" stroke="#f1f1f4" stroke-width="1" />
+                                <line x1="50" y1="65" x2="580" y2="65" stroke="#f1f1f4" stroke-width="1" />
+                                <line x1="50" y1="110" x2="580" y2="110" stroke="#f1f1f4" stroke-width="1" />
+                                <line x1="50" y1="155" x2="580" y2="155" stroke="#f1f1f4" stroke-width="1" />
+                                <line x1="50" y1="200" x2="580" y2="200" stroke="#a2a3b7" stroke-width="1.5" />
+
+                                <!-- Y-Axis Labels -->
+                                @((MarkupString)$"<text x='10' y='25' fill='#a2a3b7' font-size='10' font-weight='bold'>{FormatRevenueText(maxRevenue)}</text>")
+                                @((MarkupString)$"<text x='10' y='115' fill='#a2a3b7' font-size='10' font-weight='bold'>{FormatRevenueText(maxRevenue / 2)}</text>")
+                                @((MarkupString)"<text x='10' y='205' fill='#a2a3b7' font-size='10' font-weight='bold'>0 đ</text>")
+
+                                <!-- Area under path -->
+                                <path d="@GetAreaSvgPath()" fill="url(#chartGradient)" />
+
+                                <!-- Line Path -->
+                                <path d="@GetLineSvgPath()" fill="none" stroke="#198754" stroke-width="3" stroke-linecap="round" />
+
+                                <!-- X-Axis labels & Points -->
+                                @for (int i = 0; i < weeklyRevenue.Count; i++)
+                                {
+                                    var pt = GetPointCoordinates(i);
+                                    var label = weeklyRevenue[i].Label;
+                                    <!-- Points -->
+                                    <circle cx="@pt.X.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)" cy="@pt.Y.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)" r="5" fill="#ffffff" stroke="#198754" stroke-width="2.5" />
+                                    <!-- X Labels -->
+                                    @((MarkupString)$"<text x='{(pt.X - 15).ToString("F1", System.Globalization.CultureInfo.InvariantCulture)}' y='218' fill='#a2a3b7' font-size='10' font-weight='600'>{label}</text>")
+                                }
+                            </svg>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Top 3 Pitches List -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-header bg-white py-3 border-0">
+                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-star-fill text-warning"></i> Sân được đặt nhiều nhất</h5>
+                </div>
+                <div class="card-body d-flex flex-column justify-content-center">
+                    @if (topPitches == null || !topPitches.Any())
+                    {
+                        <div class="text-center py-5 text-muted">Chưa có lượt đặt sân</div>
+                    }
+                    else
+                    {
+                        <div class="d-flex flex-column gap-4">
+                            @{
+                                int rank = 1;
+                                int maxCount = topPitches.Max(x => x.Count);
+                                if (maxCount == 0) maxCount = 1;
+                            }
+                            @foreach (var pitch in topPitches)
+                            {
+                                <div>
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge @(GetRankBadgeClass(rank)) rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 28px; height: 28px;">@rank</span>
+                                            <span class="fw-bold text-dark">@pitch.PitchName</span>
+                                        </div>
+                                        <span class="text-muted fw-semibold">@pitch.Count lượt đặt</span>
+                                    </div>
+                                    <div class="progress rounded-pill" style="height: 10px;">
+                                        <div class="progress-bar @(GetProgressBarClass(rank))" role="progressbar" style="width: @(pitch.Count * 100 / maxCount)%;" aria-valuenow="@pitch.Count" aria-valuemin="0" aria-valuemax="@maxCount"></div>
+                                    </div>
+                                </div>
+                                rank++;
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-gradient {
+        background-size: 150% 150%;
+        animation: gradientBG 10s ease infinite;
+    }
+    
+    .card-stats {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .card-stats:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.08) !important;
+    }
+
+    .card-background-pattern {
+        position: absolute;
+        top: -50px;
+        right: -50px;
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        z-index: 0;
+    }
+</style>
+
+@code {
+    private int bookingsToday;
+    private decimal totalRevenue;
+    private double occupancyRate;
+    private List<(string PitchName, int Count)> topPitches = new();
+    private List<(string Label, decimal Revenue)> weeklyRevenue = new();
+    private decimal maxRevenue;
+
+    protected override async Task OnInitializedAsync()
+    {
+        bookingsToday = await DashboardService.GetBookingsTodayAsync();
+        totalRevenue = await DashboardService.GetTotalRevenueAllTimeAsync();
+        occupancyRate = await DashboardService.GetOccupancyRateTodayAsync();
+        topPitches = await DashboardService.GetTopPitchesAsync(3);
+        weeklyRevenue = await DashboardService.GetRevenueLast7DaysAsync();
+
+        if (weeklyRevenue != null && weeklyRevenue.Any())
+        {
+            maxRevenue = weeklyRevenue.Max(x => x.Revenue);
+        }
+        if (maxRevenue == 0)
+        {
+            maxRevenue = 130000;
+        }
+    }
+
+    private string FormatRevenueText(decimal val)
+    {
+        if (val >= 1000000)
+            return (val / 1000000m).ToString("0.#") + " M đ";
+        return val.ToString("N0") + " đ";
+    }
+
+    private (double X, double Y) GetPointCoordinates(int index)
+    {
+        // SVG dimensions: viewBox 0 0 600 220
+        // Padding: Left 50, Right 20, Top 20, Bottom 20 (effective height = 180)
+        double startX = 50;
+        double endX = 570;
+        double startY = 200;
+        double endY = 20;
+
+        double x = startX + ((endX - startX) / 6.0) * index;
+        double y = startY - ((double)weeklyRevenue[index].Revenue / (double)maxRevenue) * (startY - endY);
+
+        return (x, y);
+    }
+
+    private string GetLineSvgPath()
+    {
+        if (weeklyRevenue == null || !weeklyRevenue.Any()) return "";
+        
+        var points = new List<string>();
+        for (int i = 0; i < weeklyRevenue.Count; i++)
+        {
+            var coord = GetPointCoordinates(i);
+            points.Add($"{coord.X.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)},{coord.Y.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)}");
+        }
+        return "M " + string.Join(" L ", points);
+    }
+
+    private string GetAreaSvgPath()
+    {
+        if (weeklyRevenue == null || !weeklyRevenue.Any()) return "";
+        
+        var points = new List<string>();
+        for (int i = 0; i < weeklyRevenue.Count; i++)
+        {
+            var coord = GetPointCoordinates(i);
+            points.Add($"{coord.X.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)},{coord.Y.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)}");
+        }
+        
+        // Add bottom-right and bottom-left to close the shape
+        var lastCoord = GetPointCoordinates(weeklyRevenue.Count - 1);
+        var firstCoord = GetPointCoordinates(0);
+        
+        points.Add($"{lastCoord.X.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)},200");
+        points.Add($"{firstCoord.X.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)},200");
+        
+        return "M " + string.Join(" L ", points) + " Z";
+    }
+
+    private string GetRankBadgeClass(int rank)
+    {
+        return rank switch
+        {
+            1 => "bg-success text-white",
+            2 => "bg-primary text-white",
+            3 => "bg-warning text-dark",
+            _ => "bg-secondary text-white"
+        };
+    }
+
+    private string GetProgressBarClass(int rank)
+    {
+        return rank switch
+        {
+            1 => "bg-success",
+            2 => "bg-primary",
+            3 => "bg-warning",
+            _ => "bg-secondary"
+        };
+    }
+}

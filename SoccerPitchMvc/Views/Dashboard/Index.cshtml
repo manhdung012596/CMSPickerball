@@ -1,0 +1,182 @@
+@{
+    ViewData["Title"] = "Dashboard Thống kê";
+    var bookingsToday = ViewBag.BookingsToday;
+    var totalRevenueAllTime = ViewBag.TotalRevenueAllTime;
+    var occupancyRateToday = ViewBag.OccupancyRateToday;
+
+    var revenueLabels = System.Text.Json.JsonSerializer.Serialize(ViewBag.RevenueLabels);
+    var revenueValues = System.Text.Json.JsonSerializer.Serialize(ViewBag.RevenueValues);
+    var topPitchesLabels = System.Text.Json.JsonSerializer.Serialize(ViewBag.TopPitchesLabels);
+    var topPitchesCounts = System.Text.Json.JsonSerializer.Serialize(ViewBag.TopPitchesCounts);
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold text-dark mb-1"><i class="bi bi-speedometer2 text-success"></i> Hệ thống Quản lý Sân Pickleball</h2>
+            <p class="text-muted">Báo cáo & Thống kê tình hình hoạt động của trung tâm</p>
+        </div>
+    </div>
+
+    <!-- Stats Cards Row -->
+    <div class="row g-4 mb-4">
+        <!-- Bookings Today Card -->
+        <div class="col-xl-4 col-md-6">
+            <div class="card border-0 shadow-sm rounded-3 bg-gradient bg-primary text-white h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase fw-semibold mb-2 opacity-75" style="font-size: 0.85rem;">Đơn đặt hôm nay</h6>
+                            <h2 class="display-5 fw-bold mb-0">@bookingsToday</h2>
+                        </div>
+                        <div class="fs-1"><i class="bi bi-calendar2-check-fill opacity-50"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Revenue Card -->
+        <div class="col-xl-4 col-md-6">
+            <div class="card border-0 shadow-sm rounded-3 bg-gradient bg-success text-white h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase fw-semibold mb-2 opacity-75" style="font-size: 0.85rem;">Doanh thu tích lũy</h6>
+                            <h2 class="display-6 fw-bold mb-0">@totalRevenueAllTime.ToString("N0") <span style="font-size: 1.2rem;">đ</span></h2>
+                        </div>
+                        <div class="fs-1"><i class="bi bi-wallet2 opacity-50"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Occupancy Rate Card -->
+        <div class="col-xl-4 col-md-6">
+            <div class="card border-0 shadow-sm rounded-3 bg-gradient bg-warning text-dark h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase fw-semibold mb-2 opacity-75" style="font-size: 0.85rem;">Tỷ lệ lấp đầy hôm nay</h6>
+                            <h2 class="display-5 fw-bold mb-0">@occupancyRateToday%</h2>
+                        </div>
+                        <div class="fs-1"><i class="bi bi-percent opacity-50"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-4">
+        <!-- Revenue 7 Days Chart -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-header bg-white py-3 border-0">
+                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-graph-up text-success"></i> Doanh thu 7 ngày gần nhất (đã thanh toán)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="revenueChart" height="280"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top 3 Pitches Chart -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-header bg-white py-3 border-0">
+                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-star-fill text-warning"></i> Top 3 Sân được đặt nhiều nhất</h5>
+                </div>
+                <div class="card-body d-flex flex-column justify-content-center">
+                    <canvas id="topPitchesChart" height="280"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Thêm CDN ChartJS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Lấy dữ liệu từ ViewBag qua Json
+            var revenueLabels = @Html.Raw(revenueLabels);
+            var revenueValues = @Html.Raw(revenueValues);
+            var topPitchesLabels = @Html.Raw(topPitchesLabels);
+            var topPitchesCounts = @Html.Raw(topPitchesCounts);
+
+            // 1. Biểu đồ doanh thu 7 ngày gần nhất
+            var ctxRevenue = document.getElementById('revenueChart').getContext('2d');
+            new Chart(ctxRevenue, {
+                type: 'line',
+                data: {
+                    labels: revenueLabels,
+                    datasets: [{
+                        label: 'Doanh thu (VNĐ)',
+                        data: revenueValues,
+                        backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                        borderColor: 'rgba(25, 135, 84, 1)',
+                        borderWidth: 3,
+                        pointBackgroundColor: 'rgba(25, 135, 84, 1)',
+                        pointRadius: 5,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    return value.toLocaleString('vi-VN') + ' đ';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 2. Biểu đồ tròn Top 3 sân được đặt nhiều nhất
+            var ctxTopPitches = document.getElementById('topPitchesChart').getContext('2d');
+            new Chart(ctxTopPitches, {
+                type: 'doughnut',
+                data: {
+                    labels: topPitchesLabels,
+                    datasets: [{
+                        data: topPitchesCounts,
+                        backgroundColor: [
+                            '#198754', // Green
+                            '#0d6efd', // Blue
+                            '#ffc107'  // Yellow
+                        ],
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+}

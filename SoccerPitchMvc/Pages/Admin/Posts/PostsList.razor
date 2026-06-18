@@ -1,0 +1,280 @@
+@page "/admin/posts"
+@layout AdminLayout
+@using SoccerPitchMvc.Models
+@using SoccerPitchMvc.Services
+@inject IArticleService ArticleService
+@inject NavigationManager Navigation
+@inject ToastService Toast
+
+<PageTitle>Danh sách bài viết - Quản trị</PageTitle>
+
+<div class="page-header d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h1 class="page-title"><i class="fas fa-newspaper me-2 text-primary"></i>Danh sách bài viết</h1>
+        <p class="text-muted mb-0">Quản lý tất cả bài viết và tin tức</p>
+    </div>
+    <NavLink href="/admin/posts/create" class="btn btn-primary">
+        <i class="fas fa-plus me-1"></i> Thêm bài viết
+    </NavLink>
+</div>
+
+<!-- Filters -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body py-3">
+        <div class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" class="form-control" placeholder="Tìm kiếm tiêu đề, tác giả..."
+                           @bind="SearchTerm" @bind:event="oninput" @onkeyup="OnSearch" />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" value="@FilterCategoryId"
+                        @onchange="e => { FilterCategoryId = e.Value?.ToString() ?? string.Empty; _ = OnSearch(); }">
+                    <option value="">-- Tất cả danh mục --</option>
+                    @foreach (var cat in Categories)
+                    {
+                        <option value="@cat.Id">@cat.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" value="@FilterStatus"
+                        @onchange="e => { FilterStatus = e.Value?.ToString() ?? string.Empty; _ = OnSearch(); }">
+                    <option value="">-- Tất cả trạng thái --</option>
+                    <option value="0">Nháp</option>
+                    <option value="1">Đã xuất bản</option>
+                    <option value="2">Ẩn</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-outline-secondary w-100" @onclick="ClearFilters">
+                    <i class="fas fa-times me-1"></i>Xóa bộ lọc
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Table -->
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        @if (IsLoading)
+        {
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary"></div>
+                <p class="mt-2 text-muted">Đang tải dữ liệu...</p>
+            </div>
+        }
+        else if (!Articles.Any())
+        {
+            <div class="text-center py-5">
+                <i class="fas fa-newspaper fa-3x text-muted mb-3"></i>
+                <p class="text-muted">Không có bài viết nào. <a href="/admin/posts/create">Thêm bài viết mới</a></p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="50">#</th>
+                            <th>Tiêu đề</th>
+                            <th>Danh mục</th>
+                            <th>Tác giả</th>
+                            <th>Trạng thái</th>
+                            <th>Lượt xem</th>
+                            <th>Ngày tạo</th>
+                            <th width="160" class="text-center">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var (article, index) in Articles.Select((a, i) => (a, i + 1)))
+                        {
+                            <tr>
+                                <td class="text-muted fw-semibold">@index</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        @if (!string.IsNullOrEmpty(article.ThumbnailUrl))
+                                        {
+                                            <img src="@article.ThumbnailUrl" class="rounded" width="48" height="36" style="object-fit:cover;" alt="thumbnail" />
+                                        }
+                                        else
+                                        {
+                                            <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width:48px;height:36px;">
+                                                <i class="fas fa-image text-muted small"></i>
+                                            </div>
+                                        }
+                                        <div>
+                                            <div class="fw-semibold" style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="@article.Title">
+                                                @article.Title
+                                            </div>
+                                            @if (article.IsFeatured)
+                                            {
+                                                <span class="badge bg-warning text-dark small"><i class="fas fa-star me-1"></i>Nổi bật</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(article.CategoryName))
+                                    {
+                                        <span class="badge bg-info text-dark">@article.CategoryName</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">—</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="text-muted small">@(article.AuthorName ?? "Admin")</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-@article.StatusBadge">@article.StatusText</span>
+                                </td>
+                                <td>
+                                    <span class="text-muted small"><i class="fas fa-eye me-1"></i>@article.ViewCount</span>
+                                </td>
+                                <td>
+                                    <span class="text-muted small">@article.CreatedAt.ToString("dd/MM/yyyy")</span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-@(article.Status == 1 ? "warning" : "success")" title="@(article.Status == 1 ? "Gỡ xuống" : "Xuất bản")"
+                                                @onclick="() => TogglePublish(article.Id)">
+                                            <i class="fas fa-@(article.Status == 1 ? "eye-slash" : "upload")"></i>
+                                        </button>
+                                        <button class="btn btn-outline-primary" title="Sửa"
+                                                @onclick="() => EditArticle(article.Id)">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger" title="Xóa"
+                                                @onclick="() => ConfirmDelete(article)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between bg-light">
+                <span class="text-muted small">Tổng: <strong>@Articles.Count</strong> bài viết</span>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Delete Modal -->
+@if (ShowDeleteModal && ArticleToDelete != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Xác nhận xóa</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseDeleteModal"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <p>Bạn có chắc chắn muốn xóa bài viết:</p>
+                    <p class="fw-semibold text-danger">« @ArticleToDelete.Title »</p>
+                    <p class="text-muted small mb-0">Thao tác này không thể hoàn tác!</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary" @onclick="CloseDeleteModal"><i class="fas fa-times me-1"></i>Hủy</button>
+                    <button class="btn btn-danger" @onclick="ExecuteDelete" disabled="@IsDeleting">
+                        @if (IsDeleting)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        else
+                        {
+                            <i class="fas fa-trash me-1"></i>
+                        }
+                        Xóa bài viết
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<ArticleListDto> Articles = new();
+    private List<ArticleCategory> Categories = new();
+    private string SearchTerm = string.Empty;
+    private string FilterStatus = string.Empty;
+    private string FilterCategoryId = string.Empty;
+    private bool IsLoading = true;
+    private bool ShowDeleteModal = false;
+    private bool IsDeleting = false;
+    private ArticleListDto? ArticleToDelete;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Categories = await ArticleService.GetCategorySelectListAsync();
+        await LoadArticles();
+    }
+
+    private async Task LoadArticles()
+    {
+        IsLoading = true;
+        int? catId = int.TryParse(FilterCategoryId, out var c) ? c : null;
+        int? status = int.TryParse(FilterStatus, out var s) ? s : null;
+        Articles = await ArticleService.GetAllArticlesAsync(SearchTerm, catId, status);
+        IsLoading = false;
+    }
+
+    private void EditArticle(int id) => Navigation.NavigateTo("/admin/posts/edit/" + id);
+
+    private async Task OnSearch() => await LoadArticles();
+
+    private async Task ClearFilters()
+    {
+        SearchTerm = string.Empty;
+        FilterCategoryId = string.Empty;
+        FilterStatus = string.Empty;
+        await LoadArticles();
+    }
+
+    private async Task TogglePublish(int id)
+    {
+        var result = await ArticleService.TogglePublishAsync(id);
+        if (result.Success)
+        {
+            Toast.ShowSuccess(result.Message);
+            await LoadArticles();
+        }
+        else Toast.ShowError(result.Message);
+    }
+
+    private void ConfirmDelete(ArticleListDto article)
+    {
+        ArticleToDelete = article;
+        ShowDeleteModal = true;
+    }
+
+    private void CloseDeleteModal()
+    {
+        ShowDeleteModal = false;
+        ArticleToDelete = null;
+    }
+
+    private async Task ExecuteDelete()
+    {
+        if (ArticleToDelete == null) return;
+        IsDeleting = true;
+        var result = await ArticleService.DeleteArticleAsync(ArticleToDelete.Id);
+        IsDeleting = false;
+        if (result.Success)
+        {
+            Toast.ShowSuccess(result.Message);
+            CloseDeleteModal();
+            await LoadArticles();
+        }
+        else Toast.ShowError(result.Message);
+    }
+}

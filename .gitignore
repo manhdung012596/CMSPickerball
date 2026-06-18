@@ -1,0 +1,11 @@
+# Exclude AGENTS.md directory
+/AGENTS.md/
+
+# .NET Build Outputs
+**/bin/
+**/obj/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates

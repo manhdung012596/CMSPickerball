@@ -1,0 +1,181 @@
+@page "/admin/bookings/create"
+@layout AdminLayout
+@inject SoccerPitchMvc.Services.IBookingService BookingService
+@inject NavigationManager NavigationManager
+
+<div class="container-fluid mt-4">
+    <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-header bg-success text-white py-3">
+            <h4 class="card-title fw-bold mb-0"><i class="bi bi-calendar-plus-fill"></i> Đặt Sân Pickleball Mới</h4>
+        </div>
+        <div class="card-body p-4">
+            @if (errorMessage != null)
+            {
+                <div class="alert alert-danger" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill"></i> @errorMessage
+                </div>
+            }
+
+            <EditForm Model="booking" OnValidSubmit="HandleSubmit">
+                <DataAnnotationsValidator />
+
+                <div class="row mb-3">
+                    <!-- Customer Select -->
+                    <div class="col-md-6">
+                        <label for="Customer" class="form-label fw-semibold">Khách hàng <span class="text-danger">*</span></label>
+                        <InputSelect id="Customer" @bind-Value="booking.CustomerId" class="form-select form-select-lg">
+                            <option value="0">-- Chọn khách hàng --</option>
+                            @foreach (var customer in customers)
+                            {
+                                <option value="@customer.Id">@customer.FullName - @customer.PhoneNumber</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="() => booking.CustomerId" class="text-danger small" />
+                    </div>
+
+                    <!-- Date Selection -->
+                    <div class="col-md-6">
+                        <label for="Date" class="form-label fw-semibold">Ngày đặt sân <span class="text-danger">*</span></label>
+                        <input type="date" id="Date" class="form-control form-control-lg" 
+                               value="@booking.BookingDate.ToString("yyyy-MM-dd")" 
+                               @onchange="@(e => booking.BookingDate = DateOnly.Parse(e.Value?.ToString() ?? DateTime.Today.ToString("yyyy-MM-dd")))" />
+                        <ValidationMessage For="() => booking.BookingDate" class="text-danger small" />
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <!-- Pitch Select -->
+                    <div class="col-md-6">
+                        <label for="Pitch" class="form-label fw-semibold">Sân Pickleball <span class="text-danger">*</span></label>
+                        <select id="Pitch" class="form-select form-select-lg" @onchange="OnPitchChanged">
+                            <option value="0">-- Chọn sân --</option>
+                            @foreach (var pitch in pitches)
+                            {
+                                <option value="@pitch.Id">@pitch.Name</option>
+                            }
+                        </select>
+                        <ValidationMessage For="() => booking.PitchId" class="text-danger small" />
+                    </div>
+
+                    <!-- TimeSlot Select -->
+                    <div class="col-md-6">
+                        <label for="TimeSlot" class="form-label fw-semibold">Khung giờ thuê <span class="text-danger">*</span></label>
+                        <select id="TimeSlot" class="form-select form-select-lg" @onchange="OnTimeSlotChanged" disabled="@(booking.PitchId == 0)">
+                            <option value="0">-- Chọn khung giờ --</option>
+                            @foreach (var slot in timeSlots)
+                            {
+                                <option value="@slot.Id">@($"{slot.StartTime:hh\\:mm} - {slot.EndTime:hh\\:mm}") @(slot.PriceOverride.HasValue ? $"(Giá đặc biệt: {slot.PriceOverride.Value.ToString("N0")} đ)" : "")</option>
+                            }
+                        </select>
+                        <ValidationMessage For="() => booking.TimeSlotId" class="text-danger small" />
+                    </div>
+                </div>
+
+                <!-- Price & Notes -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Tổng tiền thanh toán</label>
+                        <div class="fs-2 fw-bold text-success">@calculatedPrice.ToString("N0") VNĐ</div>
+                        <span class="text-muted small">Tự động tính dựa trên khung giờ và giá niêm yết (mặc định 130,000đ/giờ).</span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="Note" class="form-label fw-semibold">Ghi chú</label>
+                        <InputTextArea id="Note" @bind-Value="booking.Note" class="form-control" rows="3" placeholder="Nhập ghi chú yêu cầu thêm nếu có..." />
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-success px-4 btn-lg">
+                        <i class="bi bi-calendar-plus"></i> Hoàn tất đặt sân
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary px-4 btn-lg" @onclick="NavigateBack">
+                        Quay lại
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    private Booking booking = new() { BookingDate = DateOnly.FromDateTime(DateTime.Today), Status = 0 };
+    private List<Customer> customers = new();
+    private List<Pitch> pitches = new();
+    private List<TimeSlot> timeSlots = new();
+    private string? errorMessage;
+    private decimal calculatedPrice = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        customers = await BookingService.GetCustomersAsync();
+        pitches = await BookingService.GetActivePitchesAsync();
+    }
+
+    private async Task OnPitchChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var pitchId) && pitchId > 0)
+        {
+            booking.PitchId = pitchId;
+            timeSlots = await BookingService.GetTimeSlotsForPitchAsync(pitchId);
+            booking.TimeSlotId = 0;
+            calculatedPrice = 0;
+        }
+        else
+        {
+            booking.PitchId = 0;
+            timeSlots.Clear();
+            booking.TimeSlotId = 0;
+            calculatedPrice = 0;
+        }
+    }
+
+    private void OnTimeSlotChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var slotId) && slotId > 0)
+        {
+            booking.TimeSlotId = slotId;
+            var slot = timeSlots.FirstOrDefault(t => t.Id == slotId);
+            calculatedPrice = slot?.PriceOverride ?? 130000m;
+        }
+        else
+        {
+            booking.TimeSlotId = 0;
+            calculatedPrice = 0;
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (booking.CustomerId == 0)
+        {
+            errorMessage = "Vui lòng chọn khách hàng.";
+            return;
+        }
+        if (booking.PitchId == 0)
+        {
+            errorMessage = "Vui lòng chọn sân Pickleball.";
+            return;
+        }
+        if (booking.TimeSlotId == 0)
+        {
+            errorMessage = "Vui lòng chọn khung giờ thuê.";
+            return;
+        }
+
+        var success = await BookingService.CreateBookingAsync(booking);
+        if (success)
+        {
+            NavigationManager.NavigateTo("admin/bookings");
+        }
+        else
+        {
+            errorMessage = "Khung giờ này đã được đặt trước cho ngày được chọn. Vui lòng chọn khung giờ hoặc ngày khác.";
+        }
+    }
+
+    private void NavigateBack()
+    {
+        NavigationManager.NavigateTo("admin/bookings");
+    }
+}

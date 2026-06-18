@@ -1,0 +1,166 @@
+@page "/admin/bookings/history"
+@layout AdminLayout
+@inject SoccerPitchMvc.Services.IBookingService BookingService
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold text-dark mb-1"><i class="fa-solid fa-history text-success"></i> Lịch sử Đặt Sân</h2>
+            <p class="text-muted">Danh sách và lịch sử toàn bộ các lượt đặt sân Pickleball của hệ thống</p>
+        </div>
+    </div>
+
+    <!-- Filters Toolbar -->
+    <div class="card shadow-sm border-0 rounded-3 mb-4 bg-light">
+        <div class="card-body p-3">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label text-muted fw-bold small">Tìm kiếm khách hàng</label>
+                    <input type="text" class="form-control" placeholder="Nhập tên hoặc số điện thoại..." @bind="searchQuery" @bind:event="oninput" @onkeyup="ApplyFilters" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label text-muted fw-bold small">Trạng thái</label>
+                    <select class="form-select" @onchange="OnStatusFilterChanged">
+                        <option value="-1">-- Tất cả trạng thái --</option>
+                        <option value="0">Chờ duyệt</option>
+                        <option value="1">Đã xác nhận</option>
+                        <option value="2">Đã thanh toán</option>
+                        <option value="3">Đã hủy</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-success w-100 py-2" @onclick="ResetFilters">
+                        <i class="bi bi-arrow-counterclockwise"></i> Đặt lại
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bookings Table -->
+    <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="py-3 px-4">Khách hàng</th>
+                            <th class="py-3">Sân</th>
+                            <th class="py-3">Ngày đặt</th>
+                            <th class="py-3">Khung giờ</th>
+                            <th class="py-3">Trạng thái</th>
+                            <th class="py-3 text-end px-4">Tổng tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (filteredBookings == null)
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <div class="spinner-border text-success" role="status">
+                                        <span class="visually-hidden">Đang tải...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else if (!filteredBookings.Any())
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox-fill display-4 d-block mb-3 text-secondary"></i>
+                                    Không tìm thấy lượt đặt sân nào phù hợp.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var b in filteredBookings)
+                            {
+                                <tr>
+                                    <td class="py-3 px-4">
+                                        <div class="fw-bold text-dark">@b.Customer?.FullName</div>
+                                        <div class="small text-muted">@b.Customer?.PhoneNumber</div>
+                                    </td>
+                                    <td class="fw-semibold text-dark">@b.Pitch?.Name</td>
+                                    <td class="text-dark">@b.BookingDate.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        <span class="badge bg-secondary fs-6">
+                                            @FormatTime(b.TimeSlot?.StartTime) - @FormatTime(b.TimeSlot?.EndTime)
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @((MarkupString)GetStatusBadge(b.Status))
+                                    </td>
+                                    <td class="text-end px-4 fw-bold text-success">
+                                        @b.TotalPrice.ToString("N0") VNĐ
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Booking>? allBookings;
+    private List<Booking>? filteredBookings;
+    private string searchQuery = "";
+    private int statusFilter = -1;
+
+    protected override async Task OnInitializedAsync()
+    {
+        allBookings = await BookingService.GetActiveBookingsAsync();
+        filteredBookings = allBookings;
+    }
+
+    private void ApplyFilters()
+    {
+        if (allBookings == null) return;
+
+        filteredBookings = allBookings
+            .Where(b => 
+                (statusFilter == -1 || b.Status == statusFilter) &&
+                (string.IsNullOrWhiteSpace(searchQuery) || 
+                 (b.Customer?.FullName?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                 (b.Customer?.PhoneNumber?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false))
+            )
+            .ToList();
+    }
+
+    private void OnStatusFilterChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int val))
+        {
+            statusFilter = val;
+            ApplyFilters();
+        }
+    }
+
+    private void ResetFilters()
+    {
+        searchQuery = "";
+        statusFilter = -1;
+        filteredBookings = allBookings;
+    }
+
+    private string FormatTime(TimeOnly? time)
+    {
+        if (!time.HasValue) return "";
+        return time.Value.ToString(@"HH\:mm");
+    }
+
+    private string GetStatusBadge(int status)
+    {
+        return status switch
+        {
+            0 => "<span class='badge bg-warning text-dark'><i class='bi bi-hourglass-split'></i> Chờ duyệt</span>",
+            1 => "<span class='badge bg-primary text-white'><i class='bi bi-patch-check-fill'></i> Đã xác nhận</span>",
+            2 => "<span class='badge bg-success text-white'><i class='bi bi-credit-card-fill'></i> Đã thanh toán</span>",
+            3 => "<span class='badge bg-danger text-white'><i class='bi bi-x-circle-fill'></i> Đã hủy</span>",
+            _ => "<span class='badge bg-secondary text-white'>Không rõ</span>"
+        };
+    }
+}

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - CMS Admin Panel</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/SoccerPitchMvc.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <div id="wrapper">
+        <!-- Sidebar -->
+        <div id="sidebar-wrapper">
+            <div class="sidebar-heading d-flex align-items-center gap-2">
+                <i class="fa-solid fa-table-tennis-paddle-ball text-success fs-3"></i>
+                <span>Pickleball CMS</span>
+            </div>
+            <div class="list-group list-group-flush flex-grow-1" style="overflow-y: auto;">
+                <!-- Dashboard -->
+                <a asp-controller="Dashboard" asp-action="Index" class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")">
+                    <i class="fa-solid fa-chart-line"></i> Dashboard
+                </a>
+
+                <!-- 1. Quản lý Sân Pickleball -->
+                @{
+                    var isPitchesActive = ViewContext.RouteData.Values["controller"]?.ToString() == "Pitches";
+                }
+                <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(isPitchesActive ? "active" : "")" 
+                   data-bs-toggle="collapse" href="#pitchesCollapse" role="button" aria-expanded="@(isPitchesActive ? "true" : "false")" aria-controls="pitchesCollapse">
+                    <span><i class="fa-solid fa-table-tennis-paddle-ball text-success"></i> Quản lý sân Pickleball <span class="text-warning"></span></span>
+                    <i class="bi bi-chevron-down small toggle-icon"></i>
+                </a>
+                <div class="collapse @(isPitchesActive ? "show" : "")" id="pitchesCollapse">
+                    <a asp-controller="Pitches" asp-action="Index" class="collapse-menu-item @(isPitchesActive && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">
+                        <i class="fa-solid fa-list-ul"></i> Danh sách sân
+                    </a>
+                    <a asp-controller="Pitches" asp-action="Create" class="collapse-menu-item @(isPitchesActive && ViewContext.RouteData.Values["action"]?.ToString() == "Create" ? "active" : "")">
+                        <i class="fa-solid fa-plus"></i> Thêm sân mới
+                    </a>
+                    <a href="#" class="collapse-menu-item">
+                        <i class="fa-solid fa-clock"></i> Quản lý khung giờ
+                    </a>
+                </div>
+
+                <!-- 2. Quản lý đặt sân -->
+                @{
+                    var isBookingsActive = ViewContext.RouteData.Values["controller"]?.ToString() == "Bookings";
+                }
+                <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(isBookingsActive ? "active" : "")" 
+                   data-bs-toggle="collapse" href="#bookingsCollapse" role="button" aria-expanded="@(isBookingsActive ? "true" : "false")" aria-controls="bookingsCollapse">
+                    <span><i class="fa-regular fa-calendar-check"></i> Quản lý đặt sân <span class="text-warning">★</span></span>
+                    <i class="bi bi-chevron-down small toggle-icon"></i>
+                </a>
+                <div class="collapse @(isBookingsActive ? "show" : "")" id="bookingsCollapse">
+                    <a asp-controller="Bookings" asp-action="Calendar" class="collapse-menu-item @(isBookingsActive && ViewContext.RouteData.Values["action"]?.ToString() == "Calendar" ? "active" : "")">
+                        <i class="fa-regular fa-calendar"></i> Lịch đặt sân (Calendar)
+                    </a>
+                    <a asp-controller="Bookings" asp-action="Index" class="collapse-menu-item @(isBookingsActive && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">
+                        <i class="fa-solid fa-list-check"></i> Danh sách đặt sân
+                    </a>
+                    <a asp-controller="Bookings" asp-action="Create" class="collapse-menu-item @(isBookingsActive && ViewContext.RouteData.Values["action"]?.ToString() == "Create" ? "active" : "")">
+                        <i class="fa-solid fa-calendar-plus"></i> Đặt sân mới
+                    </a>
+                    <a href="#" class="collapse-menu-item">
+                        <i class="fa-solid fa-circle-check"></i> Xác nhận đặt sân
+                    </a>
+                    <a href="#" class="collapse-menu-item">
+                        <i class="fa-solid fa-history"></i> Lịch sử đặt sân
+                    </a>
+                </div>
+
+                <!-- 3. Quản lý bài viết -->
+                <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" 
+                   data-bs-toggle="collapse" href="#articlesCollapse" role="button" aria-expanded="false" aria-controls="articlesCollapse">
+                    <span><i class="fa-regular fa-newspaper"></i> Quản lý bài viết</span>
+                    <i class="bi bi-chevron-down small toggle-icon"></i>
+                </a>
+                <div class="collapse" id="articlesCollapse">
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-list"></i> Danh sách bài viết</a>
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-file-circle-plus"></i> Thêm bài viết mới</a>
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-folder-tree"></i> Danh mục bài viết</a>
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-comments"></i> Bình luận</a>
+                </div>
+
+                <!-- 4. Quản lý khách hàng -->
+                <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" 
+                   data-bs-toggle="collapse" href="#customersCollapse" role="button" aria-expanded="false" aria-controls="customersCollapse">
+                    <span><i class="fa-solid fa-user-group"></i> Quản lý khách hàng</span>
+                    <i class="bi bi-chevron-down small toggle-icon"></i>
+                </a>
+                <div class="collapse" id="customersCollapse">
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-users"></i> Danh sách khách hàng</a>
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-user-plus"></i> Thêm khách hàng mới</a>
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-award"></i> Nhóm khách hàng</a>
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-history"></i> Lịch sử đặt sân</a>
+                </div>
+
+                <!-- 5. Quản lý dịch vụ -->
+                <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" 
+                   data-bs-toggle="collapse" href="#servicesCollapse" role="button" aria-expanded="false" aria-controls="servicesCollapse">
+                    <span><i class="fa-solid fa-bell-concierge"></i> Quản lý dịch vụ</span>
+                    <i class="bi bi-chevron-down small toggle-icon"></i>
+                </a>
+                <div class="collapse" id="servicesCollapse">
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-table-tennis-paddle-ball"></i> Dịch vụ thuê sân</a>
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-hockey-puck"></i> Cho thuê vợt</a>
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-circle"></i> Cho thuê bóng</a>
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-graduation-cap"></i> Dịch vụ huấn luyện</a>
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-trophy"></i> Tổ chức giải đấu</a>
+                </div>
+
+                <!-- 6. Quản lý mua hàng -->
+                <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" 
+                   data-bs-toggle="collapse" href="#shopCollapse" role="button" aria-expanded="false" aria-controls="shopCollapse">
+                    <span><i class="fa-solid fa-cart-shopping"></i> Quản lý mua hàng</span>
+                    <i class="bi bi-chevron-down small toggle-icon"></i>
+                </a>
+                <div class="collapse" id="shopCollapse">
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-clipboard-list"></i> Danh sách đơn hàng</a>
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-cart-plus"></i> Đơn hàng mới</a>
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-box-open"></i> Sản phẩm</a>
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-truck-loading"></i> Nhập hàng</a>
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-boxes-stacked"></i> Tồn kho</a>
+                </div>
+
+                <!-- 7. Sổ quỹ -->
+                <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" 
+                   data-bs-toggle="collapse" href="#fundCollapse" role="button" aria-expanded="false" aria-controls="fundCollapse">
+                    <span><i class="fa-solid fa-wallet"></i> Sổ quỹ</span>
+                    <i class="bi bi-chevron-down small toggle-icon"></i>
+                </a>
+                <div class="collapse" id="fundCollapse">
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-money-bill-wave"></i> Thu tiền sân</a>
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-file-invoice-dollar"></i> Chi phí vận hành</a>
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-chart-pie"></i> Báo cáo thu chi</a>
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-scale-balanced"></i> Đối soát</a>
+                </div>
+
+                <!-- 8. Quản lý Masterdata -->
+                <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" 
+                   data-bs-toggle="collapse" href="#masterdataCollapse" role="button" aria-expanded="false" aria-controls="masterdataCollapse">
+                    <span><i class="fa-solid fa-database"></i> Quản lý Masterdata</span>
+                    <i class="bi bi-chevron-down small toggle-icon"></i>
+                </a>
+                <div class="collapse" id="masterdataCollapse">
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-clock"></i> Khung giờ mặc định</a>
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-hand-holding-dollar"></i> Giá dịch vụ</a>
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-tags"></i> Danh mục sản phẩm</a>
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-weight-scale"></i> Đơn vị tính</a>
+                </div>
+
+                <!-- 9. Khuyến mại -->
+                <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" 
+                   data-bs-toggle="collapse" href="#promoCollapse" role="button" aria-expanded="false" aria-controls="promoCollapse">
+                    <span><i class="fa-solid fa-tag"></i> Khuyến mại</span>
+                    <i class="bi bi-chevron-down small toggle-icon"></i>
+                </a>
+                <div class="collapse" id="promoCollapse">
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-rectangle-ad"></i> Danh sách khuyến mại</a>
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-circle-plus"></i> Thêm khuyến mại mới</a>
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-ticket-simple"></i> Mã giảm giá</a>
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-gift"></i> Chương trình ưu đãi</a>
+                </div>
+
+                <!-- 10. Cấu hình website -->
+                <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" 
+                   data-bs-toggle="collapse" href="#websiteCollapse" role="button" aria-expanded="false" aria-controls="websiteCollapse">
+                    <span><i class="fa-solid fa-gears"></i> Cấu hình website</span>
+                    <i class="bi bi-chevron-down small toggle-icon"></i>
+                </a>
+                <div class="collapse" id="websiteCollapse">
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-info-circle"></i> Thông tin chung</a>
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-images"></i> Logo & Banner</a>
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-address-book"></i> Liên hệ</a>
+                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-window-restore"></i> Cài đặt hiển thị</a>
+                </div>
+
+                <!-- 11. Hệ Thống (Ngôn ngữ) -->
+                @{
+                    var isLanguagesActive = ViewContext.RouteData.Values["controller"]?.ToString() == "Languages";
+                }
+                <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(isLanguagesActive ? "active" : "")" 
+                   data-bs-toggle="collapse" href="#settingsCollapse" role="button" aria-expanded="@(isLanguagesActive ? "true" : "false")" aria-controls="settingsCollapse">
+                    <span><i class="fa-solid fa-language"></i> Hệ Thống</span>
+                    <i class="bi bi-chevron-down small toggle-icon"></i>
+                </a>
+                <div class="collapse @(isLanguagesActive ? "show" : "")" id="settingsCollapse">
+                    <a asp-controller="Languages" asp-action="Index" class="collapse-menu-item @(isLanguagesActive ? "active" : "")">
+                        <i class="fa-solid fa-translate"></i> Quản lý Ngôn ngữ
+                    </a>
+                </div>
+            </div>
+            
+            <div class="p-3 border-top border-secondary text-center small text-muted">
+                &copy; 2026 Pickleball CMS
+            </div>
+        </div>
+        <!-- /#sidebar-wrapper -->
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+            <!-- Header -->
+            <nav class="navbar navbar-expand-lg navbar-light navbar-admin d-flex justify-content-between align-items-center shadow-sm">
+                <div class="d-flex align-items-center gap-3">
+                    <button class="btn btn-outline-secondary btn-sm border-0" id="menu-toggle">
+                        <i class="bi bi-list fs-4"></i>
+                    </button>
+                    <!-- Breadcrumbs -->
+                    <nav aria-label="breadcrumb" class="d-none d-md-inline-block">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index" class="text-decoration-none text-muted">Trang chủ</a></li>
+                            @if (ViewContext.RouteData.Values["controller"]?.ToString() == "Languages")
+                            {
+                                <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Quản lý Ngôn ngữ</li>
+                            }
+                            else if (ViewContext.RouteData.Values["controller"]?.ToString() == "Pitches")
+                            {
+                                <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Quản lý sân Pickleball</li>
+                            }
+                            else if (ViewContext.RouteData.Values["controller"]?.ToString() == "Bookings")
+                            {
+                                <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Đặt Sân</li>
+                            }
+                            else
+                            {
+                                <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Dashboard</li>
+                            }
+                        </ol>
+                    </nav>
+                </div>
+
+                <div class="d-flex align-items-center gap-3">
+                    <!-- Search Box -->
+                    <form method="get" action="" class="d-none d-sm-flex position-relative">
+                        <input type="text" name="searchTerm" class="form-control form-control-sm pe-5 rounded-pill" placeholder="Tìm kiếm nhanh..." style="width: 200px;" />
+                        <button type="submit" class="btn btn-sm position-absolute end-0 top-0 border-0 h-100 rounded-pill"><i class="bi bi-search text-muted"></i></button>
+                    </form>
+
+                    <!-- Notifications Dropdown -->
+                    <div class="dropdown">
+                        <button class="btn btn-light btn-sm rounded-circle position-relative border" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-bell"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-2" style="width: 280px;">
+                            <li><h6 class="dropdown-header">Thông báo mới</h6></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item py-2" href="#">
+                                    <div class="fw-semibold text-dark small">Đặt sân mới #12</div>
+                                    <div class="text-muted small">Khách hàng Nguyễn Văn A vừa đặt sân 5A</div>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item py-2" href="#">
+                                    <div class="fw-semibold text-dark small">Yêu cầu bảo trì sân 11A</div>
+                                    <div class="text-muted small">Sân 11A được báo cáo gặp sự cố lưới</div>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Language Switcher -->
+                    <div class="dropdown">
+                        <button class="btn btn-light btn-sm dropdown-toggle border" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-translate"></i> VI
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                            <li><a class="dropdown-item" href="#"><span class="fw-bold">VI</span> - Tiếng Việt</a></li>
+                            <li><a class="dropdown-item" href="#"><span class="fw-bold">EN</span> - English</a></li>
+                        </ul>
+                    </div>
+
+                    <!-- User Avatar -->
+                    <div class="dropdown">
+                        <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle text-dark" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&h=80&q=80" alt="avatar" class="rounded-circle border" width="36" height="36" />
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-2">
+                            <li><div class="px-3 py-1 fw-bold text-dark">Admin User</div></li>
+                            <li><div class="px-3 pb-2 text-muted small">admin@pickleball.com</div></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-person"></i> Hồ sơ</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-box-arrow-right"></i> Đăng xuất</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Content Container -->
+            <div class="container-fluid p-4">
+                <main role="main" class="pb-3">
+                    @RenderBody()
+                </main>
+            </div>
+        </div>
+        <!-- /#page-content-wrapper -->
+    </div>
+    <!-- /#wrapper -->
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    
+    <!-- Menu Toggle Script -->
+    <script>
+        $("#menu-toggle").click(function (e) {
+            e.preventDefault();
+            $("#wrapper").toggleClass("toggled");
+        });
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

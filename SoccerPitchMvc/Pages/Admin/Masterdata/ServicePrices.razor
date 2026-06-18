@@ -1,0 +1,281 @@
+@page "/admin/masterdata/service-prices"
+@layout AdminLayout
+@using SoccerPitchMvc.Models
+@using SoccerPitchMvc.Services
+@inject IMasterdataService MasterdataService
+@inject ToastService Toast
+
+<PageTitle>Giá dịch vụ - Quản trị</PageTitle>
+
+<div class="page-header d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h1 class="page-title"><i class="fas fa-hand-holding-dollar me-2 text-primary"></i>Giá dịch vụ</h1>
+        <p class="text-muted mb-0">Quản lý bảng giá cho tất cả dịch vụ tại sân Pickleball</p>
+    </div>
+    <button class="btn btn-primary" @onclick="ShowCreateModal">
+        <i class="fas fa-plus me-1"></i> Thêm giá dịch vụ
+    </button>
+</div>
+
+<!-- Filter by Service Type -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body py-3">
+        <div class="d-flex gap-2 flex-wrap align-items-center">
+            <span class="text-muted fw-semibold me-2"><i class="fas fa-filter me-1"></i>Lọc:</span>
+            <button class="btn btn-sm @(FilterType == null ? "btn-primary" : "btn-outline-primary")" @onclick="() => SetFilter(null)">Tất cả</button>
+            <button class="btn btn-sm @(FilterType == 1 ? "btn-primary" : "btn-outline-primary")" @onclick="() => SetFilter(1)"><i class="fas fa-table-tennis me-1"></i>Thuê vợt</button>
+            <button class="btn btn-sm @(FilterType == 2 ? "btn-info" : "btn-outline-info")" @onclick="() => SetFilter(2)"><i class="fas fa-circle me-1"></i>Thuê bóng</button>
+            <button class="btn btn-sm @(FilterType == 3 ? "btn-success" : "btn-outline-success")" @onclick="() => SetFilter(3)"><i class="fas fa-graduation-cap me-1"></i>Huấn luyện</button>
+            <button class="btn btn-sm @(FilterType == 4 ? "btn-warning" : "btn-outline-warning")" @onclick="() => SetFilter(4)"><i class="fas fa-trophy me-1"></i>Tổ chức giải</button>
+            <button class="btn btn-sm @(FilterType == 5 ? "btn-secondary" : "btn-outline-secondary")" @onclick="() => SetFilter(5)">Khác</button>
+        </div>
+    </div>
+</div>
+
+<!-- Prices Grid -->
+<div class="row g-4">
+    @if (IsLoading)
+    {
+        <div class="col-12 text-center py-5">
+            <div class="spinner-border text-primary"></div>
+            <p class="mt-2 text-muted">Đang tải...</p>
+        </div>
+    }
+    else if (!Prices.Any())
+    {
+        <div class="col-12 text-center py-5">
+            <i class="fas fa-tags fa-3x text-muted mb-3"></i>
+            <p class="text-muted">Chưa có giá dịch vụ nào.</p>
+            <button class="btn btn-primary" @onclick="ShowCreateModal"><i class="fas fa-plus me-1"></i>Thêm giá đầu tiên</button>
+        </div>
+    }
+    else
+    {
+        @foreach (var price in Prices)
+        {
+            <div class="col-md-6 col-lg-4">
+                <div class="card border-0 shadow-sm h-100 @(price.Status == 0 ? "opacity-50" : "")">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <span class="badge bg-@price.ServiceTypeBadge fs-6 px-2 py-1">
+                                @price.ServiceTypeText
+                            </span>
+                            <span class="badge bg-@price.StatusBadge">@price.StatusText</span>
+                        </div>
+                        <h5 class="fw-bold mb-1">@price.ServiceName</h5>
+                        @if (!string.IsNullOrEmpty(price.Description))
+                        {
+                            <p class="text-muted small mb-2">@price.Description</p>
+                        }
+                        <div class="price-display bg-light rounded p-2 text-center mb-3">
+                            <span class="fs-4 fw-bold text-success">@price.Price.ToString("N0")</span>
+                            <span class="text-muted"> VNĐ/@(price.PriceUnit ?? "lần")</span>
+                        </div>
+                        @if (!string.IsNullOrEmpty(price.Note))
+                        {
+                            <p class="text-muted small fst-italic mb-2"><i class="fas fa-sticky-note me-1"></i>@price.Note</p>
+                        }
+                        <div class="d-flex gap-2 mt-auto">
+                            <button class="btn btn-outline-primary btn-sm flex-fill" @onclick="() => ShowEditModal(price)">
+                                <i class="fas fa-edit me-1"></i>Sửa
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm" @onclick="() => ConfirmDelete(price)">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<!-- Create/Edit Modal -->
+@if (ShowModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-@(IsEditing ? "edit" : "plus-circle") me-2"></i>
+                        @(IsEditing ? "Sửa giá dịch vụ" : "Thêm giá dịch vụ mới")
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Tên dịch vụ <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" @bind="ModalServiceName" placeholder="VD: Thuê vợt theo giờ..." />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Loại dịch vụ</label>
+                            <select class="form-select" @bind="ModalServiceType">
+                                <option value="1">Thuê vợt</option>
+                                <option value="2">Thuê bóng</option>
+                                <option value="3">Huấn luyện</option>
+                                <option value="4">Tổ chức giải</option>
+                                <option value="5">Khác</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Mô tả</label>
+                            <textarea class="form-control" @bind="ModalDescription" rows="2" placeholder="Mô tả ngắn về dịch vụ..."></textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Giá (VNĐ) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" @bind="ModalPrice" min="0" step="1000" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Đơn vị tính giá</label>
+                            <input type="text" class="form-control" @bind="ModalPriceUnit" placeholder="lần, giờ, buổi..." />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Thứ tự</label>
+                            <input type="number" class="form-control" @bind="ModalSortOrder" min="0" />
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Ghi chú</label>
+                            <input type="text" class="form-control" @bind="ModalNote" placeholder="Điều kiện áp dụng..." />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Trạng thái</label>
+                            <select class="form-select" @bind="ModalStatus">
+                                <option value="1">Hoạt động</option>
+                                <option value="0">Ẩn</option>
+                            </select>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(ModalError))
+                    {
+                        <div class="alert alert-danger mt-3 py-2"><i class="fas fa-exclamation-circle me-1"></i>@ModalError</div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary" @onclick="CloseModal">Hủy</button>
+                    <button class="btn btn-primary" @onclick="SavePrice" disabled="@IsSaving">
+                        @if (IsSaving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                        @(IsEditing ? "Lưu thay đổi" : "Thêm giá dịch vụ")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Delete Modal -->
+@if (ShowDeleteModal && PriceToDelete != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Xác nhận xóa</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="() => ShowDeleteModal = false"></button>
+                </div>
+                <div class="modal-body py-3">
+                    <p>Xóa giá dịch vụ: <strong class="text-danger">@PriceToDelete.ServiceName</strong>?</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary" @onclick="() => ShowDeleteModal = false">Hủy</button>
+                    <button class="btn btn-danger" @onclick="ExecuteDelete" disabled="@IsDeleting">
+                        @if (IsDeleting) { <span class="spinner-border spinner-border-sm me-1"></span> } Xóa
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<ServicePriceListDto> Prices = new();
+    private int? FilterType = null;
+    private bool IsLoading = true;
+    private bool ShowModal = false;
+    private bool ShowDeleteModal = false;
+    private bool IsEditing = false;
+    private bool IsSaving = false;
+    private bool IsDeleting = false;
+    private ServicePriceListDto? PriceToDelete;
+
+    private int ModalId = 0;
+    private string ModalServiceName = string.Empty;
+    private string ModalDescription = string.Empty;
+    private int ModalServiceType = 5;
+    private decimal ModalPrice = 0;
+    private string ModalPriceUnit = "lần";
+    private string ModalNote = string.Empty;
+    private int ModalSortOrder = 0;
+    private int ModalStatus = 1;
+    private string ModalError = string.Empty;
+
+    protected override async Task OnInitializedAsync() => await LoadData();
+
+    private async Task LoadData()
+    {
+        IsLoading = true;
+        Prices = await MasterdataService.GetAllServicePricesAsync(FilterType);
+        IsLoading = false;
+    }
+
+    private async Task SetFilter(int? type) { FilterType = type; await LoadData(); }
+
+    private void ShowCreateModal()
+    {
+        IsEditing = false; ModalId = 0; ModalServiceName = string.Empty; ModalDescription = string.Empty;
+        ModalServiceType = 5; ModalPrice = 0; ModalPriceUnit = "lần"; ModalNote = string.Empty;
+        ModalSortOrder = 0; ModalStatus = 1; ModalError = string.Empty; ShowModal = true;
+    }
+
+    private void ShowEditModal(ServicePriceListDto price)
+    {
+        IsEditing = true; ModalId = price.Id; ModalServiceName = price.ServiceName;
+        ModalDescription = price.Description ?? string.Empty; ModalServiceType = price.ServiceType;
+        ModalPrice = price.Price; ModalPriceUnit = price.PriceUnit ?? "lần";
+        ModalNote = price.Note ?? string.Empty; ModalSortOrder = price.SortOrder;
+        ModalStatus = price.Status; ModalError = string.Empty; ShowModal = true;
+    }
+
+    private void CloseModal() { ShowModal = false; ModalError = string.Empty; }
+
+    private async Task SavePrice()
+    {
+        if (string.IsNullOrWhiteSpace(ModalServiceName)) { ModalError = "Tên dịch vụ không được để trống!"; return; }
+        if (ModalPrice < 0) { ModalError = "Giá không hợp lệ!"; return; }
+        IsSaving = true; ModalError = string.Empty;
+
+        (bool Success, string Message) result;
+        if (IsEditing)
+            result = await MasterdataService.UpdateServicePriceAsync(new UpdateServicePriceDto
+            {
+                Id = ModalId, ServiceName = ModalServiceName, Description = ModalDescription,
+                ServiceType = ModalServiceType, Price = ModalPrice, PriceUnit = ModalPriceUnit,
+                Note = ModalNote, SortOrder = ModalSortOrder, Status = ModalStatus
+            });
+        else
+            result = await MasterdataService.CreateServicePriceAsync(new CreateServicePriceDto
+            {
+                ServiceName = ModalServiceName, Description = ModalDescription,
+                ServiceType = ModalServiceType, Price = ModalPrice, PriceUnit = ModalPriceUnit,
+                Note = ModalNote, SortOrder = ModalSortOrder, Status = ModalStatus
+            });
+
+        IsSaving = false;
+        if (result.Success) { Toast.ShowSuccess(result.Message); CloseModal(); await LoadData(); }
+        else ModalError = result.Message;
+    }
+
+    private void ConfirmDelete(ServicePriceListDto price) { PriceToDelete = price; ShowDeleteModal = true; }
+
+    private async Task ExecuteDelete()
+    {
+        if (PriceToDelete == null) return;
+        IsDeleting = true;
+        var result = await MasterdataService.DeleteServicePriceAsync(PriceToDelete.Id);
+        IsDeleting = false; ShowDeleteModal = false;
+        if (result.Success) { Toast.ShowSuccess(result.Message); await LoadData(); }
+        else Toast.ShowError(result.Message);
+        PriceToDelete = null;
+    }
+}

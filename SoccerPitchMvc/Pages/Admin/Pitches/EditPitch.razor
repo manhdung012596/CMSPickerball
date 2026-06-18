@@ -1,0 +1,118 @@
+@page "/admin/pitches/edit/{Id:int}"
+@layout AdminLayout
+@inject SoccerPitchMvc.Services.IPitchService PitchService
+@inject NavigationManager NavigationManager
+
+<div class="container-fluid mt-4">
+    <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-header bg-primary text-white py-3">
+            <h4 class="card-title fw-bold mb-0"><i class="bi bi-pencil-square"></i> Chỉnh Sửa Sân Pickleball</h4>
+        </div>
+        <div class="card-body p-4">
+            @if (loading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Đang tải...</span>
+                    </div>
+                </div>
+            }
+            else if (pitch == null)
+            {
+                <div class="alert alert-danger" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill"></i> Không tìm thấy thông tin sân Pickleball.
+                </div>
+                <button class="btn btn-secondary" @onclick="NavigateBack">Quay lại</button>
+            }
+            else
+            {
+                @if (errorMessage != null)
+                {
+                    <div class="alert alert-danger" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill"></i> @errorMessage
+                    </div>
+                }
+
+                <EditForm Model="pitch" OnValidSubmit="HandleSubmit">
+                    <DataAnnotationsValidator />
+                    
+                    <div class="mb-3">
+                        <label for="Name" class="form-label fw-semibold">Tên Sân Pickleball <span class="text-danger">*</span></label>
+                        <InputText id="Name" @bind-Value="pitch.Name" class="form-control form-control-lg" placeholder="Ví dụ: Sân Pickleball A, Sân Pickleball B..." />
+                        <ValidationMessage For="() => pitch.Name" class="text-danger small" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="Price" class="form-label fw-semibold">Giá thuê/giờ</label>
+                        <input type="text" id="Price" class="form-control" value="130,000 VNĐ" disabled />
+                        <span class="text-muted small">Tất cả các sân áp dụng mức giá thuê chung theo quy định nghiệp vụ mới.</span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="Status" class="form-label fw-semibold">Trạng thái</label>
+                        <InputSelect id="Status" @bind-Value="pitch.Status" class="form-select">
+                            <option value="0">Đang hoạt động</option>
+                            <option value="1">Bảo trì</option>
+                        </InputSelect>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-save"></i> Cập nhật
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary px-4" @onclick="NavigateBack">
+                            Quay lại
+                        </button>
+                    </div>
+                </EditForm>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private Pitch? pitch;
+    private bool loading = true;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        loading = true;
+        pitch = await PitchService.GetPitchByIdAsync(Id);
+        loading = false;
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (pitch == null) return;
+
+        if (string.IsNullOrWhiteSpace(pitch.Name))
+        {
+            errorMessage = "Vui lòng nhập tên sân.";
+            return;
+        }
+
+        var exists = await PitchService.IsPitchNameExistsAsync(pitch.Name, pitch.Id);
+        if (exists)
+        {
+            errorMessage = $"Tên sân '{pitch.Name}' đã tồn tại trong hệ thống.";
+            return;
+        }
+
+        var success = await PitchService.UpdatePitchAsync(pitch);
+        if (success)
+        {
+            NavigationManager.NavigateTo("admin/pitches");
+        }
+        else
+        {
+            errorMessage = "Đã xảy ra lỗi khi cập nhật sân.";
+        }
+    }
+
+    private void NavigateBack()
+    {
+        NavigationManager.NavigateTo("admin/pitches");
+    }
+}
