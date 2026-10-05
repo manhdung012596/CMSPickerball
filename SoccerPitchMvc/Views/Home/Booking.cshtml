@@ -1,388 +1,83 @@
 @{
     Layout = "_PublicLayout";
     ViewData["Title"] = "Đặt sân Pickleball";
+    var pitches = ViewBag.Pitches as List<SoccerPitchMvc.Models.Pitch> ?? new();
+    int selectedPitchId = (int)(ViewBag.SelectedPitchId ?? 0);
+    var selectedPitch = ViewBag.SelectedPitch as SoccerPitchMvc.Models.Pitch;
+    var timeSlots = ViewBag.TimeSlots as List<SoccerPitchMvc.Models.TimeSlot> ?? new();
+
+    string TypeLabel(int t) => t switch { 1 => "Sân đơn", 2 => "Sân đôi", 3 => "Sân tiêu chuẩn", _ => "Sân Pickleball" };
 }
 
 @section Styles {
-    <style>
-        .page-header-banner {
-            background-color: var(--dark-slate);
-            padding: 50px 0;
-            color: #ffffff;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            text-align: center;
-        }
+<style>
+    .page-header-banner { background-color: var(--dark-slate); padding: 50px 0; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; }
+    .page-title { font-size: 36px; font-weight: 800; margin-bottom: 10px; }
+    .breadcrumb-custom { display: flex; justify-content: center; gap: 8px; font-size: 14px; color: #94a3b8; font-weight: 500; }
+    .breadcrumb-custom a { color: var(--lime-bright); text-decoration: none; }
+    .section-padding { padding: 60px 0; }
+    .booking-step-card { background: #fff; border-radius: 20px; border: 1px solid var(--border-color); padding: 30px; box-shadow: var(--card-shadow); margin-bottom: 30px; }
+    .step-num-title { display: flex; align-items: center; gap: 12px; margin-bottom: 25px; }
+    .step-circle { width: 32px; height: 32px; border-radius: 50%; background-color: var(--lime-green); color: #fff; display: flex; align-items: center; justify-content: center; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; }
+    .step-title-text { font-size: 20px; font-weight: 700; color: var(--dark-slate); font-family: 'Outfit', sans-serif; }
 
-        .page-title {
-            font-size: 36px;
-            font-weight: 800;
-            margin-bottom: 10px;
-        }
+    /* Calendar */
+    .calendar-header-slider { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .calendar-month-name { font-size: 18px; font-weight: 700; color: var(--dark-slate); font-family: 'Outfit', sans-serif; }
+    .calendar-nav-btn { background: none; border: 1px solid var(--border-color); width: 36px; height: 36px; border-radius: 50%; color: var(--dark-slate); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: var(--transition-smooth); }
+    .calendar-nav-btn:hover { background-color: var(--lime-green); border-color: var(--lime-green); color: #fff; }
+    .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
+    .day-cell { text-align: center; padding: 12px 6px; border-radius: 12px; border: 1.5px solid var(--border-color); cursor: pointer; transition: var(--transition-smooth); user-select: none; }
+    .day-cell:hover { border-color: var(--lime-green); background: rgba(132,204,22,0.07); }
+    .day-cell.active { background-color: var(--lime-green); border-color: var(--lime-green); }
+    .day-cell.active .day-name, .day-cell.active .day-num { color: #fff; }
+    .day-cell.past { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+    .day-name { font-size: 11px; color: #64748b; font-weight: 600; margin-bottom: 4px; }
+    .day-num { font-size: 18px; font-weight: 800; color: var(--dark-slate); font-family: 'Outfit', sans-serif; }
+    .day-date-str { font-size: 10px; color: #94a3b8; margin-top: 2px; }
 
-        .breadcrumb-custom {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            font-size: 14px;
-            color: #94a3b8;
-            font-weight: 500;
-        }
+    /* Court Pills */
+    .court-pill-list { display: flex; flex-wrap: wrap; gap: 12px; }
+    .court-pill-btn { padding: 10px 20px; border-radius: 50px; border: 2px solid var(--border-color); background: #fff; font-weight: 600; cursor: pointer; font-family: 'Outfit', sans-serif; font-size: 14px; transition: var(--transition-smooth); display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 110px; }
+    .court-pill-btn:hover { border-color: var(--lime-green); color: var(--lime-green); }
+    .court-pill-btn.active { background-color: var(--lime-green); border-color: var(--lime-green); color: #fff; }
+    .court-pill-price { font-size: 12px; font-weight: 500; opacity: 0.85; }
 
-        .breadcrumb-custom a {
-            color: var(--lime-bright);
-            text-decoration: none;
-        }
+    /* Time Slots */
+    .time-slots-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
+    .time-slot-box { border: 2px solid var(--border-color); border-radius: 12px; padding: 14px 10px; text-align: center; cursor: pointer; transition: var(--transition-smooth); background: #fff; }
+    .time-slot-box.available:hover { border-color: var(--lime-green); background: rgba(132,204,22,0.07); }
+    .time-slot-box.available.active { border-color: var(--lime-green); background-color: var(--lime-green); }
+    .time-slot-box.available.active .time-slot-val, .time-slot-box.available.active .time-slot-price { color: #fff; }
+    .time-slot-box.booked { opacity: 0.4; cursor: not-allowed; background: #f1f5f9; }
+    .time-slot-val { font-size: 16px; font-weight: 700; color: var(--dark-slate); font-family: 'Outfit', sans-serif; }
+    .time-slot-end { font-size: 11px; color: #94a3b8; }
+    .time-slot-price { font-size: 12px; color: var(--lime-green); font-weight: 600; margin-top: 4px; }
+    .time-slot-label { font-size: 11px; margin-top: 4px; }
+    .slots-loading { text-align: center; padding: 30px; color: #94a3b8; }
 
-        .section-padding {
-            padding: 60px 0;
-        }
-
-        /* Booking Container Layout */
-        .booking-step-card {
-            background: #ffffff;
-            border-radius: 20px;
-            border: 1px solid var(--border-color);
-            padding: 30px;
-            box-shadow: var(--card-shadow);
-            margin-bottom: 30px;
-        }
-
-        .step-num-title {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 25px;
-        }
-
-        .step-circle {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background-color: var(--lime-green);
-            color: #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Outfit', sans-serif;
-            font-weight: 700;
-            font-size: 14px;
-        }
-
-        .step-title-text {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--dark-slate);
-            font-family: 'Outfit', sans-serif;
-        }
-
-        /* Calendar slider */
-        .calendar-header-slider {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .calendar-month-name {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--dark-slate);
-            font-family: 'Outfit', sans-serif;
-        }
-
-        .calendar-nav-btn {
-            background: none;
-            border: 1px solid var(--border-color);
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            color: var(--dark-slate);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: var(--transition-smooth);
-        }
-
-        .calendar-nav-btn:hover {
-            background-color: var(--lime-green);
-            color: #ffffff;
-            border-color: var(--lime-green);
-        }
-
-        .week-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 10px;
-        }
-
-        .day-cell {
-            border: 1px solid var(--border-color);
-            border-radius: 14px;
-            padding: 12px 5px;
-            text-align: center;
-            cursor: pointer;
-            transition: var(--transition-smooth);
-            background-color: #f8fafc;
-        }
-
-        .day-cell.active {
-            background-color: var(--dark-slate);
-            color: #ffffff;
-            border-color: var(--dark-slate);
-        }
-
-        .day-name {
-            font-size: 12px;
-            font-weight: 700;
-            color: #64748b;
-            text-transform: uppercase;
-            margin-bottom: 5px;
-        }
-
-        .day-cell.active .day-name {
-            color: var(--lime-bright);
-        }
-
-        .day-num {
-            font-size: 18px;
-            font-weight: 700;
-            font-family: 'Outfit', sans-serif;
-            margin-bottom: 8px;
-        }
-
-        .day-status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            margin: 0 auto;
-        }
-
-        .day-status-dot.available {
-            background-color: var(--lime-green);
-        }
-
-        .day-status-dot.full {
-            background-color: #ef4444;
-        }
-
-        /* Court Selector Pills */
-        .courts-pill-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-
-        .court-pill-btn {
-            background-color: #f8fafc;
-            border: 1px solid var(--border-color);
-            padding: 12px 24px;
-            border-radius: 50px;
-            font-weight: 600;
-            color: #475569;
-            cursor: pointer;
-            transition: var(--transition-smooth);
-            font-family: 'Outfit', sans-serif;
-            font-size: 14px;
-        }
-
-        .court-pill-btn:hover {
-            border-color: var(--lime-green);
-            color: var(--lime-green);
-        }
-
-        .court-pill-btn.active {
-            background-color: var(--lime-green);
-            color: #ffffff;
-            border-color: var(--lime-green);
-            box-shadow: 0 4px 12px rgba(132,204,22,0.25);
-        }
-
-        /* Timeslot Grid */
-        .time-slots-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-            gap: 15px;
-        }
-
-        .time-slot-box {
-            border: 1px solid var(--border-color);
-            border-radius: 14px;
-            padding: 12px;
-            text-align: center;
-            cursor: pointer;
-            transition: var(--transition-smooth);
-            background-color: #ffffff;
-        }
-
-        .time-slot-box.available {
-            border-left: 4px solid var(--lime-green);
-        }
-
-        .time-slot-box.booked {
-            border-left: 4px solid #ef4444;
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .time-slot-box.active {
-            background-color: var(--dark-slate);
-            color: #ffffff;
-            border-color: var(--dark-slate);
-            border-left-width: 4px;
-        }
-
-        .time-slot-val {
-            font-size: 16px;
-            font-weight: 700;
-            font-family: 'Outfit', sans-serif;
-        }
-
-        .time-slot-lbl {
-            font-size: 11px;
-            font-weight: 600;
-            margin-top: 4px;
-        }
-
-        .time-slot-box.available .time-slot-lbl {
-            color: #4d7c0f;
-        }
-
-        .time-slot-box.booked .time-slot-lbl {
-            color: #b91c1c;
-        }
-
-        .time-slot-box.active .time-slot-lbl {
-            color: var(--lime-bright);
-        }
-
-        /* Sidebar summary receipt */
-        .summary-receipt-card {
-            background-color: var(--dark-slate);
-            color: #ffffff;
-            border-radius: 24px;
-            padding: 30px;
-            box-shadow: 0 15px 35px rgba(15, 23, 42, 0.15);
-            position: sticky;
-            top: 110px;
-        }
-
-        .receipt-header {
-            font-size: 20px;
-            font-weight: 800;
-            color: #ffffff;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding-bottom: 15px;
-            margin-bottom: 20px;
-            font-family: 'Outfit', sans-serif;
-            letter-spacing: -0.5px;
-        }
-
-        .receipt-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 12px;
-            font-size: 14px;
-        }
-
-        .receipt-lbl {
-            color: #94a3b8;
-            font-weight: 500;
-        }
-
-        .receipt-val {
-            font-weight: 600;
-            text-align: right;
-        }
-
-        .receipt-val.highlight {
-            color: var(--lime-bright);
-        }
-
-        .receipt-divider {
-            border-top: 1px dashed rgba(255,255,255,0.1);
-            margin: 20px 0;
-        }
-
-        .receipt-total {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .total-price-val {
-            font-size: 24px;
-            font-weight: 800;
-            color: var(--lime-bright);
-            font-family: 'Outfit', sans-serif;
-        }
-
-        /* Form client info inputs */
-        .form-label-booking {
-            font-size: 12px;
-            font-weight: 700;
-            color: #64748b;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
-        }
-
-        .form-control-booking {
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 10px 15px;
-            font-size: 14px;
-            font-weight: 500;
-            transition: var(--transition-smooth);
-        }
-
-        .form-control-booking:focus {
-            border-color: var(--lime-green);
-            box-shadow: 0 0 0 3px rgba(132,204,22,0.15);
-            outline: none;
-        }
-
-        .btn-submit-booking {
-            background: linear-gradient(135deg, var(--lime-green) 0%, #76b813 100%);
-            color: #ffffff;
-            font-family: 'Outfit', sans-serif;
-            font-weight: 700;
-            width: 100%;
-            border: none;
-            padding: 12px 0;
-            border-radius: 12px;
-            margin-top: 15px;
-            box-shadow: 0 4px 15px rgba(132,204,22,0.2);
-            transition: var(--transition-smooth);
-        }
-
-        .btn-submit-booking:hover {
-            background: #ffffff;
-            color: var(--dark-slate);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255,255,255,0.25);
-        }
-
-        .btn-cancel-booking {
-            background: transparent;
-            border: 1px solid rgba(255,255,255,0.2);
-            color: #ffffff;
-            width: 100%;
-            padding: 12px 0;
-            border-radius: 12px;
-            font-weight: 600;
-            margin-top: 10px;
-            transition: var(--transition-smooth);
-        }
-
-        .btn-cancel-booking:hover {
-            border-color: #ef4444;
-            color: #ef4444;
-        }
-    </style>
+    /* Summary Panel */
+    .summary-panel { position: sticky; top: 20px; }
+    .summary-receipt-card { background: var(--dark-slate); border-radius: 20px; padding: 30px; color: #fff; }
+    .receipt-header { font-size: 18px; font-weight: 700; font-family: 'Outfit', sans-serif; color: var(--lime-bright); margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; }
+    .receipt-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .receipt-lbl { font-size: 13px; color: #94a3b8; }
+    .receipt-val { font-size: 14px; font-weight: 600; color: #fff; text-align: right; max-width: 60%; }
+    .receipt-divider { border-top: 1px solid rgba(255,255,255,0.1); margin: 18px 0; }
+    .receipt-total { display: flex; justify-content: space-between; align-items: center; }
+    .total-price-val { font-size: 22px; font-weight: 800; color: var(--lime-bright); font-family: 'Outfit', sans-serif; }
+    .form-label-booking { font-size: 13px; font-weight: 600; color: #94a3b8; margin-bottom: 6px; display: block; }
+    .form-control-booking { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #fff; font-size: 14px; padding: 10px 14px; }
+    .form-control-booking::placeholder { color: rgba(255,255,255,0.4); }
+    .form-control-booking:focus { background: rgba(255,255,255,0.1); border-color: var(--lime-green); box-shadow: none; outline: none; color: #fff; }
+    .btn-submit-booking { background: var(--lime-green); color: var(--dark-slate); font-weight: 700; font-size: 16px; width: 100%; border: none; padding: 14px 0; border-radius: 12px; margin-top: 15px; box-shadow: 0 4px 15px rgba(132,204,22,0.2); transition: var(--transition-smooth); cursor: pointer; }
+    .btn-submit-booking:hover { background: #fff; color: var(--dark-slate); }
+    .btn-submit-booking:disabled { opacity: 0.5; cursor: not-allowed; }
+    .alert-booking-error { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; color: #fca5a5; padding: 12px 16px; margin-bottom: 16px; font-size: 14px; }
+</style>
 }
 
-<!-- PAGE HEADER BANNER -->
+<!-- PAGE HEADER -->
 <div class="page-header-banner">
     <div class="container">
         <h1 class="page-title">Đặt Sân Trực Tuyến</h1>
@@ -394,300 +89,455 @@
     </div>
 </div>
 
+@if (TempData["BookingError"] != null)
+{
+    <div class="container mt-3">
+        <div class="alert alert-danger rounded-3">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i> @TempData["BookingError"]
+        </div>
+    </div>
+}
+
 <!-- MAIN CONTENT -->
 <div class="container section-padding">
     <div class="row g-4">
-        
-        <!-- Left: Booking steps selection -->
+
+        <!-- LEFT: Steps -->
         <div class="col-lg-8">
-            
-            <!-- Step 1: Calendar Select Date -->
+
+            <!-- Step 1: Chọn ngày -->
             <div class="booking-step-card">
                 <div class="step-num-title">
                     <div class="step-circle">1</div>
                     <div class="step-title-text">Chọn Ngày Chơi</div>
                 </div>
-                
+
                 <div class="calendar-header-slider">
-                    <button class="calendar-nav-btn"><i class="fa-solid fa-chevron-left"></i></button>
-                    <div class="calendar-month-name">Tháng 06 / 2026</div>
-                    <button class="calendar-nav-btn"><i class="fa-solid fa-chevron-right"></i></button>
+                    <button class="calendar-nav-btn" onclick="shiftWeek(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+                    <div class="calendar-month-name" id="calMonthLabel">--</div>
+                    <button class="calendar-nav-btn" onclick="shiftWeek(1)"><i class="fa-solid fa-chevron-right"></i></button>
                 </div>
-                
-                <div class="week-grid">
-                    <!-- Day cells -->
-                    <div class="day-cell" onclick="selectDate(this, 'Thứ Hai', '15/06/2026')">
-                        <div class="day-name">T2</div>
-                        <div class="day-num">15</div>
-                        <div class="day-status-dot full"></div>
-                    </div>
-                    <div class="day-cell" onclick="selectDate(this, 'Thứ Ba', '16/06/2026')">
-                        <div class="day-name">T3</div>
-                        <div class="day-num">16</div>
-                        <div class="day-status-dot available"></div>
-                    </div>
-                    <div class="day-cell" onclick="selectDate(this, 'Thứ Tư', '17/06/2026')">
-                        <div class="day-name">T4</div>
-                        <div class="day-num">17</div>
-                        <div class="day-status-dot available"></div>
-                    </div>
-                    <div class="day-cell active" onclick="selectDate(this, 'Thứ Năm', '18/06/2026')">
-                        <div class="day-name">T5</div>
-                        <div class="day-num">18</div>
-                        <div class="day-status-dot available"></div>
-                    </div>
-                    <div class="day-cell" onclick="selectDate(this, 'Thứ Sáu', '19/06/2026')">
-                        <div class="day-name">T6</div>
-                        <div class="day-num">19</div>
-                        <div class="day-status-dot available"></div>
-                    </div>
-                    <div class="day-cell" onclick="selectDate(this, 'Thứ Bảy', '20/06/2026')">
-                        <div class="day-name">T7</div>
-                        <div class="day-num">20</div>
-                        <div class="day-status-dot available"></div>
-                    </div>
-                    <div class="day-cell" onclick="selectDate(this, 'Chủ Nhật', '21/06/2026')">
-                        <div class="day-name">CN</div>
-                        <div class="day-num">21</div>
-                        <div class="day-status-dot available"></div>
-                    </div>
+
+                <div class="week-grid" id="weekGrid">
+                    <!-- Rendered by JS -->
                 </div>
             </div>
 
-            <!-- Step 2: Select Court -->
+            <!-- Step 2: Chọn sân -->
             <div class="booking-step-card">
                 <div class="step-num-title">
                     <div class="step-circle">2</div>
                     <div class="step-title-text">Chọn Sân</div>
                 </div>
-                
-                <div class="courts-pill-grid">
-                    <button class="court-pill-btn active" onclick="selectCourt(this, 'Sân A', 'Sân 5 người', 130000)">Sân A (Sân 5 người)</button>
-                    <button class="court-pill-btn" onclick="selectCourt(this, 'Sân B', 'Sân 5 người', 130000)">Sân B (Sân 5 người)</button>
-                    <button class="court-pill-btn" onclick="selectCourt(this, 'Sân C', 'Sân 7 người', 130000)">Sân C (Sân 7 người)</button>
-                    <button class="court-pill-btn" onclick="selectCourt(this, 'Sân D', 'Sân 7 người', 130000)">Sân D (Sân 7 người)</button>
+                <div class="court-pill-list">
+                    @foreach (var pitch in pitches)
+                    {
+                        <button class="court-pill-btn @(pitch.Id == selectedPitchId ? "active" : "")"
+                                onclick="selectCourt(this, @pitch.Id, '@pitch.Name', '@TypeLabel(pitch.Type)', @pitch.PricePerHour.ToString(System.Globalization.CultureInfo.InvariantCulture))"
+                                data-pitch-id="@pitch.Id">
+                            <span>@pitch.Name</span>
+                            <span class="court-pill-price">@pitch.PricePerHour.ToString("#,##0")đ/giờ</span>
+                        </button>
+                    }
+                    @if (!pitches.Any())
+                    {
+                        <p class="text-muted">Chưa có sân nào. Vui lòng liên hệ.</p>
+                    }
                 </div>
             </div>
 
-            <!-- Step 3: Select Time slot -->
+            <!-- Step 3: Chọn khung giờ -->
             <div class="booking-step-card">
                 <div class="step-num-title">
                     <div class="step-circle">3</div>
-                    <div class="step-title-text">Chọn Giờ Chơi</div>
+                    <div class="step-title-text">Chọn Khung Giờ</div>
                 </div>
-                
-                <div class="time-slots-grid">
-                    <!-- Available -->
-                    <div class="time-slot-box available" onclick="selectTime(this, '06:00 - 07:00')">
-                        <div class="time-slot-val">06:00</div>
-                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Trống</div>
-                    </div>
-                    <div class="time-slot-box available" onclick="selectTime(this, '07:00 - 08:00')">
-                        <div class="time-slot-val">07:00</div>
-                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Trống</div>
-                    </div>
-                    <!-- Booked -->
-                    <div class="time-slot-box booked">
-                        <div class="time-slot-val">08:00</div>
-                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Kín</div>
-                    </div>
-                    <div class="time-slot-box available" onclick="selectTime(this, '09:00 - 10:00')">
-                        <div class="time-slot-val">09:00</div>
-                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Trống</div>
-                    </div>
-                    <div class="time-slot-box available" onclick="selectTime(this, '10:00 - 11:00')">
-                        <div class="time-slot-val">10:00</div>
-                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Trống</div>
-                    </div>
-                    <div class="time-slot-box available" onclick="selectTime(this, '11:00 - 12:00')">
-                        <div class="time-slot-val">11:00</div>
-                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Trống</div>
-                    </div>
-                    <div class="time-slot-box available" onclick="selectTime(this, '12:00 - 13:00')">
-                        <div class="time-slot-val">12:00</div>
-                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Trống</div>
-                    </div>
-                    <div class="time-slot-box available" onclick="selectTime(this, '13:00 - 14:00')">
-                        <div class="time-slot-val">13:00</div>
-                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Trống</div>
-                    </div>
-                    <div class="time-slot-box available" onclick="selectTime(this, '14:00 - 15:00')">
-                        <div class="time-slot-val">14:00</div>
-                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Trống</div>
-                    </div>
-                    <div class="time-slot-box booked">
-                        <div class="time-slot-val">15:00</div>
-                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Kín</div>
-                    </div>
-                    <div class="time-slot-box available" onclick="selectTime(this, '16:00 - 17:00')">
-                        <div class="time-slot-val">16:00</div>
-                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Trống</div>
-                    </div>
-                    <div class="time-slot-box available" onclick="selectTime(this, '17:00 - 18:00')">
-                        <div class="time-slot-val">17:00</div>
-                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Trống</div>
-                    </div>
-                    <!-- Selected / Active -->
-                    <div class="time-slot-box available active" onclick="selectTime(this, '18:00 - 19:00')">
-                        <div class="time-slot-val">18:00</div>
-                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Trống</div>
-                    </div>
-                    <div class="time-slot-box booked">
-                        <div class="time-slot-val">19:00</div>
-                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Kín</div>
-                    </div>
-                    <div class="time-slot-box available" onclick="selectTime(this, '20:00 - 21:00')">
-                        <div class="time-slot-val">20:00</div>
-                        <div class="time-slot-lbl"><i class="fa-solid fa-circle small"></i> Trống</div>
-                    </div>
+                <div class="time-slots-grid" id="slotsGrid">
+                    <div class="slots-loading"><i class="fa-solid fa-spinner fa-spin me-2"></i> Đang tải khung giờ...</div>
                 </div>
             </div>
 
-        </div>
+        </div><!-- end col-lg-8 -->
 
-        <!-- Right: Booking Form & Receipt Summary -->
+        <!-- RIGHT: Summary + Form -->
         <div class="col-lg-4">
-            <div class="summary-receipt-card">
-                <h3 class="receipt-header">Thông tin đặt sân</h3>
-                
-                <div class="receipt-row">
-                    <span class="receipt-lbl">Sân chọn:</span>
-                    <span class="receipt-val" id="summary-court">Sân A - Sân 5 người</span>
-                </div>
-                <div class="receipt-row">
-                    <span class="receipt-lbl">Ngày chơi:</span>
-                    <span class="receipt-val" id="summary-date">Thứ Năm, 18/06/2026</span>
-                </div>
-                <div class="receipt-row">
-                    <span class="receipt-lbl">Giờ chơi:</span>
-                    <span class="receipt-val" id="summary-time">18:00 - 19:00</span>
-                </div>
-                <div class="receipt-row">
-                    <span class="receipt-lbl">Giá cơ bản:</span>
-                    <span class="receipt-val" id="summary-base-price">130.000 VNĐ</span>
-                </div>
-                
-                <div class="receipt-divider"></div>
-                
-                <!-- Customer info inputs -->
-                <form id="bookingForm" onsubmit="submitBooking(); return false;">
-                    <div class="mb-3">
-                        <label class="form-label-booking">Họ tên khách hàng *</label>
-                        <input type="text" class="form-control form-control-booking w-100" id="custName" required placeholder="Nhập họ và tên..." />
+            <div class="summary-panel">
+                <div class="summary-receipt-card">
+                    <div class="receipt-header"><i class="fa-solid fa-receipt me-2"></i>Thông tin đặt sân</div>
+
+                    <div class="receipt-row">
+                        <span class="receipt-lbl">Sân chọn:</span>
+                        <span class="receipt-val" id="sum-court">@(selectedPitch?.Name ?? "—")</span>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label-booking">Số điện thoại *</label>
-                        <input type="tel" class="form-control form-control-booking w-100" id="custPhone" required placeholder="Nhập số điện thoại..." />
+                    <div class="receipt-row">
+                        <span class="receipt-lbl">Ngày chơi:</span>
+                        <span class="receipt-val" id="sum-date">—</span>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label-booking">Địa chỉ Email</label>
-                        <input type="email" class="form-control form-control-booking w-100" id="custEmail" placeholder="Nhập email (không bắt buộc)..." />
+                    <div class="receipt-row">
+                        <span class="receipt-lbl">Giờ chơi:</span>
+                        <span class="receipt-val" id="sum-time">—</span>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label-booking">Ghi chú thêm</label>
-                        <textarea class="form-control form-control-booking w-100" id="custNotes" rows="2" placeholder="Ví dụ: Thuê thêm vợt, nước..."></textarea>
+                    <div class="receipt-row">
+                        <span class="receipt-lbl">Đơn giá:</span>
+                        <span class="receipt-val" id="sum-price">@(selectedPitch?.PricePerHour.ToString("#,##0") ?? "—") VNĐ</span>
                     </div>
-                    
+
                     <div class="receipt-divider"></div>
-                    
-                    <div class="receipt-total mb-4">
-                        <span class="receipt-lbl text-white fw-bold">Tổng thanh toán:</span>
-                        <span class="total-price-val" id="summary-total-price">130.000 VNĐ</span>
-                    </div>
-                    
-                    <button type="submit" class="btn-submit-booking"><i class="fa-solid fa-circle-check me-2"></i>Xác nhận đặt sân</button>
-                    <button type="reset" class="btn-cancel-booking" onclick="resetForm()"><i class="fa-solid fa-circle-xmark me-2"></i>Hủy</button>
-                </form>
+
+                    <!-- Form thông tin khách -->
+                    <form id="bookingForm" action="/Home/SubmitBooking" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="pitchId" id="hPitchId" value="@selectedPitchId" />
+                        <input type="hidden" name="timeSlotId" id="hTimeSlotId" value="" />
+                        <input type="hidden" name="bookingDate" id="hBookingDate" value="" />
+
+                        <div class="mb-3">
+                            <label class="form-label-booking">Họ tên khách hàng *</label>
+                            <input type="text" name="customerName" class="form-control form-control-booking w-100"
+                                   required placeholder="Nhập họ và tên..." value="@ViewBag.CustomerName" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label-booking">Số điện thoại *</label>
+                            <input type="tel" name="customerPhone" class="form-control form-control-booking w-100"
+                                   required placeholder="Nhập số điện thoại..." pattern="[0-9]{9,11}" value="@ViewBag.CustomerPhone" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label-booking">Ghi chú thêm</label>
+                            <textarea name="notes" class="form-control form-control-booking w-100" rows="2"
+                                      placeholder="Ví dụ: Thuê thêm vợt, nước..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label-booking">Mã giảm giá (Voucher)</label>
+                            <div class="input-group">
+                                <input type="text" id="couponCodeInput" class="form-control form-control-booking" placeholder="Nhập mã voucher..." style="border-top-right-radius:0; border-bottom-right-radius:0;" />
+                                <button type="button" class="btn btn-outline-light" id="btnApplyCoupon" onclick="applyCoupon()" style="border-top-left-radius:0; border-bottom-left-radius:0; font-size: 13px; font-weight: 600;">Áp dụng</button>
+                            </div>
+                            <input type="hidden" name="couponCode" id="hCouponCode" value="" />
+                            <div id="couponMessage" class="small mt-1" style="display:none; font-weight:500;"></div>
+                        </div>
+
+                        <div class="receipt-divider"></div>
+
+                        <div class="receipt-row mb-3" id="discountRow" style="display:none;">
+                            <span class="receipt-lbl text-warning">Được giảm giá:</span>
+                            <span class="receipt-val text-warning fw-bold" id="sum-discount">—</span>
+                        </div>
+
+                        <div class="receipt-total mb-4">
+                            <span class="receipt-lbl text-white fw-bold">Tổng thanh toán:</span>
+                            <span class="total-price-val" id="sum-total">—</span>
+                        </div>
+
+                        <div id="formError" class="alert-booking-error" style="display:none;"></div>
+
+                        <button type="submit" class="btn-submit-booking" id="btnSubmit" onclick="return validateBooking()">
+                            <i class="fa-solid fa-circle-check me-2"></i>Xác nhận đặt sân
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
-        
+
     </div>
 </div>
 
 @section Scripts {
-    <script>
-        let selectedDateText = "Thứ Năm, 18/06/2026";
-        let selectedCourtText = "Sân A - Sân 5 người";
-        let selectedTimeText = "18:00 - 19:00";
-        let courtPrice = 130000;
+<script>
+// ======= State =======
+let state = {
+    pitchId: @selectedPitchId,
+    pitchName: '@(selectedPitch?.Name ?? "")',
+    pitchPrice: @((selectedPitch?.PricePerHour ?? 0).ToString(System.Globalization.CultureInfo.InvariantCulture)),
+    timeSlotId: null,
+    timeRange: null,
+    slotPrice: null,
+    selectedDate: null,   // DateOnly string "yyyy-MM-dd"
+    selectedDateLabel: null,
+    weekOffset: 0,        // weeks from today
+    appliedCouponCode: null,
+    discountAmount: 0
+};
 
-        function selectDate(element, dayName, dateStr) {
-            // Remove active from all days
-            document.querySelectorAll('.day-cell').forEach(cell => cell.classList.remove('active'));
-            // Add active to selected
-            element.classList.add('active');
-            
-            selectedDateText = `${dayName}, ${dateStr}`;
-            updateSummary();
+const DAY_NAMES = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+const MONTH_VI = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
+
+// ======= Calendar =======
+function buildWeek() {
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const startDay = new Date(today);
+    startDay.setDate(today.getDate() + state.weekOffset * 7);
+    // start from startDay's Monday (or today if current week)
+    const dow = startDay.getDay();
+    const monday = new Date(startDay);
+    monday.setDate(startDay.getDate() - (dow === 0 ? 6 : dow - 1));
+
+    // Month label
+    const endDay = new Date(monday);
+    endDay.setDate(monday.getDate() + 6);
+    document.getElementById('calMonthLabel').textContent =
+        MONTH_VI[monday.getMonth()] + ' / ' + monday.getFullYear();
+
+    const grid = document.getElementById('weekGrid');
+    grid.innerHTML = '';
+
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(monday);
+        d.setDate(monday.getDate() + i);
+        const isPast = d < today;
+        const dateStr = toDateStr(d); // yyyy-MM-dd
+        const isActive = state.selectedDate === dateStr;
+
+        const cell = document.createElement('div');
+        cell.className = 'day-cell' + (isPast ? ' past' : '') + (isActive ? ' active' : '');
+        cell.innerHTML = `
+            <div class="day-name">${DAY_NAMES[d.getDay()]}</div>
+            <div class="day-num">${d.getDate()}</div>
+            <div class="day-date-str">${d.getDate()}/${d.getMonth()+1}</div>
+        `;
+        if (!isPast) {
+            cell.onclick = () => selectDate(cell, d, dateStr);
         }
+        grid.appendChild(cell);
+    }
+}
 
-        function selectCourt(element, courtName, capacityStr, price) {
-            // Remove active from all courts
-            document.querySelectorAll('.court-pill-btn').forEach(btn => btn.classList.remove('active'));
-            // Add active to selected
-            element.classList.add('active');
-            
-            selectedCourtText = `${courtName} - ${capacityStr}`;
-            courtPrice = price;
-            updateSummary();
+function shiftWeek(dir) {
+    state.weekOffset += dir;
+    if (state.weekOffset < 0) state.weekOffset = 0;
+    buildWeek();
+}
+
+function selectDate(el, dateObj, dateStr) {
+    document.querySelectorAll('.day-cell').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+
+    const dayName = DAY_NAMES[dateObj.getDay()];
+    state.selectedDate = dateStr;
+    state.selectedDateLabel = `${dayName} ${dateObj.getDate()}/${dateObj.getMonth()+1}/${dateObj.getFullYear()}`;
+    document.getElementById('hBookingDate').value = dateStr;
+    document.getElementById('sum-date').textContent = state.selectedDateLabel;
+
+    // Reset time
+    state.timeSlotId = null;
+    state.timeRange = null;
+    document.getElementById('hTimeSlotId').value = '';
+    document.getElementById('sum-time').textContent = '—';
+    resetCoupon();
+
+    loadSlots();
+}
+
+// ======= Sân =======
+function selectCourt(el, pitchId, pitchName, typeLabel, price) {
+    document.querySelectorAll('.court-pill-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+
+    state.pitchId = pitchId;
+    state.pitchName = pitchName;
+    state.pitchPrice = price;
+
+    document.getElementById('hPitchId').value = pitchId;
+    document.getElementById('sum-court').textContent = pitchName;
+    document.getElementById('sum-price').textContent = Number(price).toLocaleString('vi-VN') + ' VNĐ';
+
+    // Reset time
+    state.timeSlotId = null;
+    state.timeRange = null;
+    document.getElementById('hTimeSlotId').value = '';
+    document.getElementById('sum-time').textContent = '—';
+    resetCoupon();
+
+    if (state.selectedDate) loadSlots();
+}
+
+// ======= Khung giờ AJAX =======
+async function loadSlots() {
+    if (!state.pitchId || !state.selectedDate) return;
+
+    const grid = document.getElementById('slotsGrid');
+    grid.innerHTML = '<div class="slots-loading"><i class="fa-solid fa-spinner fa-spin me-2"></i> Đang tải...</div>';
+
+    try {
+        const res = await fetch(`/Home/GetTimeSlots?pitchId=${state.pitchId}&date=${state.selectedDate}`);
+        const slots = await res.json();
+        renderSlots(slots);
+    } catch (e) {
+        grid.innerHTML = '<div class="slots-loading text-danger">Lỗi tải khung giờ. Vui lòng thử lại.</div>';
+    }
+}
+
+function renderSlots(slots) {
+    const grid = document.getElementById('slotsGrid');
+    grid.innerHTML = '';
+
+    if (!slots.length) {
+        grid.innerHTML = '<div class="slots-loading">Sân này chưa có khung giờ. Vui lòng liên hệ.</div>';
+        return;
+    }
+
+    slots.forEach(s => {
+        const box = document.createElement('div');
+        const avail = !s.isBooked;
+        box.className = 'time-slot-box ' + (avail ? 'available' : 'booked');
+        box.innerHTML = `
+            <div class="time-slot-val">${s.startTime}</div>
+            <div class="time-slot-end">→ ${s.endTime}</div>
+            <div class="time-slot-price">${Number(s.price).toLocaleString('vi-VN')}đ</div>
+            <div class="time-slot-label">${avail ? '' : '<span style="color:#ef4444;font-size:11px;">Đã đặt</span>'}</div>
+        `;
+        if (avail) {
+            box.onclick = () => selectSlot(box, s);
         }
+        grid.appendChild(box);
+    });
+}
 
-        function selectTime(element, timeRange) {
-            // Remove active from all available slots
-            document.querySelectorAll('.time-slot-box.available').forEach(box => box.classList.remove('active'));
-            // Add active to selected
-            element.classList.add('active');
-            
-            selectedTimeText = timeRange;
-            updateSummary();
-        }
+function selectSlot(el, slot) {
+    document.querySelectorAll('.time-slot-box.available').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
 
-        function updateSummary() {
-            document.getElementById('summary-court').innerText = selectedCourtText;
-            document.getElementById('summary-date').innerText = selectedDateText;
-            document.getElementById('summary-time').innerText = selectedTimeText;
-            
-            let priceFormatted = courtPrice.toLocaleString('vi-VN') + ' VNĐ';
-            document.getElementById('summary-base-price').innerText = priceFormatted;
-            document.getElementById('summary-total-price').innerText = priceFormatted;
-        }
+    state.timeSlotId = slot.id;
+    state.slotPrice = slot.price;
+    state.timeRange = `${slot.startTime} – ${slot.endTime}`;
 
-        function submitBooking() {
-            const name = document.getElementById('custName').value.trim();
-            const phone = document.getElementById('custPhone').value.trim();
-            if (!name || !phone) {
-                alert('Vui lòng điền các trường bắt buộc (*)');
-                return;
+    document.getElementById('hTimeSlotId').value = slot.id;
+    document.getElementById('sum-time').textContent = state.timeRange;
+    document.getElementById('sum-price').textContent = Number(slot.price).toLocaleString('vi-VN') + ' VNĐ';
+    
+    resetCoupon();
+    updateTotalDisplay();
+}
+
+// ======= Coupon functions =======
+function resetCoupon() {
+    document.getElementById('couponCodeInput').value = '';
+    document.getElementById('hCouponCode').value = '';
+    document.getElementById('couponMessage').style.display = 'none';
+    document.getElementById('discountRow').style.display = 'none';
+    document.getElementById('sum-discount').textContent = '—';
+    state.appliedCouponCode = null;
+    state.discountAmount = 0;
+    updateTotalDisplay();
+}
+
+function updateTotalDisplay() {
+    if (!state.timeSlotId || !state.slotPrice) {
+        document.getElementById('sum-total').textContent = '—';
+        return;
+    }
+    const originalPrice = state.slotPrice;
+    const finalPrice = Math.max(0, originalPrice - state.discountAmount);
+    document.getElementById('sum-total').textContent = Number(finalPrice).toLocaleString('vi-VN') + ' VNĐ';
+    
+    if (state.discountAmount > 0) {
+        document.getElementById('discountRow').style.display = 'flex';
+        document.getElementById('sum-discount').textContent = '-' + Number(state.discountAmount).toLocaleString('vi-VN') + ' VNĐ';
+    } else {
+        document.getElementById('discountRow').style.display = 'none';
+    }
+}
+
+function applyCoupon() {
+    const msgEl = document.getElementById('couponMessage');
+    msgEl.style.display = 'none';
+
+    if (!state.timeSlotId || !state.slotPrice) {
+        msgEl.textContent = '✗ Vui lòng chọn khung giờ trước khi áp dụng mã.';
+        msgEl.className = 'small mt-1 text-danger';
+        msgEl.style.display = 'block';
+        return;
+    }
+
+    const code = document.getElementById('couponCodeInput').value.trim();
+    if (!code) {
+        msgEl.textContent = '✗ Vui lòng nhập mã giảm giá.';
+        msgEl.className = 'small mt-1 text-danger';
+        msgEl.style.display = 'block';
+        return;
+    }
+
+    const btn = document.getElementById('btnApplyCoupon');
+    btn.disabled = true;
+    btn.textContent = 'Đang áp dụng...';
+
+    fetch(`/Home/CheckCoupon?code=${encodeURIComponent(code)}&pitchId=${state.pitchId}&originalPrice=${state.slotPrice}`)
+        .then(res => res.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.textContent = 'Áp dụng';
+
+            if (data.success) {
+                state.appliedCouponCode = code;
+                state.discountAmount = data.discountAmount;
+                document.getElementById('hCouponCode').value = code;
+
+                msgEl.textContent = '✓ ' + data.message;
+                msgEl.className = 'small mt-1 text-success';
+                msgEl.style.display = 'block';
+
+                updateTotalDisplay();
+            } else {
+                msgEl.textContent = '✗ ' + data.message;
+                msgEl.className = 'small mt-1 text-danger';
+                msgEl.style.display = 'block';
+
+                state.appliedCouponCode = null;
+                state.discountAmount = 0;
+                document.getElementById('hCouponCode').value = '';
+                updateTotalDisplay();
             }
-            
-            alert(`🎉 Đặt sân thành công!\n\nThông tin chi tiết:\n- Sân: ${selectedCourtText}\n- Thời gian: ${selectedTimeText} ngày ${selectedDateText}\n- Khách hàng: ${name} (${phone})\n\nChúng tôi đã lưu thông tin và sẽ liên hệ lại với bạn sớm nhất.`);
-            resetForm();
-        }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.textContent = 'Áp dụng';
+            msgEl.textContent = '✗ Có lỗi xảy ra khi kiểm tra mã.';
+            msgEl.className = 'small mt-1 text-danger';
+            msgEl.style.display = 'block';
+        });
+}
 
-        function resetForm() {
-            document.getElementById('bookingForm').reset();
-            // Reset selectors to default active states
-            // Day 18
-            document.querySelectorAll('.day-cell').forEach((cell, idx) => {
-                if (idx === 3) cell.classList.add('active');
-                else cell.classList.remove('active');
-            });
-            // Court A
-            document.querySelectorAll('.court-pill-btn').forEach((btn, idx) => {
-                if (idx === 0) btn.classList.add('active');
-                else btn.classList.remove('active');
-            });
-            // Slot 18:00
-            document.querySelectorAll('.time-slot-box.available').forEach((box) => {
-                if (box.querySelector('.time-slot-val').innerText === "18:00") box.classList.add('active');
-                else box.classList.remove('active');
-            });
-            
-            selectedDateText = "Thứ Năm, 18/06/2026";
-            selectedCourtText = "Sân A - Sân 5 người";
-            selectedTimeText = "18:00 - 19:00";
-            courtPrice = 130000;
-            updateSummary();
-        }
-    </script>
+// ======= Validation =======
+function validateBooking() {
+    const errEl = document.getElementById('formError');
+    errEl.style.display = 'none';
+
+    if (!state.selectedDate) {
+        errEl.textContent = '⚠ Vui lòng chọn ngày chơi!';
+        errEl.style.display = 'block';
+        return false;
+    }
+    if (!state.pitchId) {
+        errEl.textContent = '⚠ Vui lòng chọn sân!';
+        errEl.style.display = 'block';
+        return false;
+    }
+    if (!state.timeSlotId) {
+        errEl.textContent = '⚠ Vui lòng chọn khung giờ!';
+        errEl.style.display = 'block';
+        return false;
+    }
+    return true;
+}
+
+// ======= Utilities =======
+function toDateStr(d) {
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+// ======= Init =======
+buildWeek();
+
+// Auto-select today
+const today = new Date();
+today.setHours(0,0,0,0);
+const todayStr = toDateStr(today);
+state.selectedDate = todayStr;
+state.selectedDateLabel = `${DAY_NAMES[today.getDay()]} ${today.getDate()}/${today.getMonth()+1}/${today.getFullYear()}`;
+document.getElementById('hBookingDate').value = todayStr;
+document.getElementById('sum-date').textContent = state.selectedDateLabel;
+buildWeek(); // Rebuild to highlight today
+if (state.pitchId > 0) loadSlots();
+</script>
 }

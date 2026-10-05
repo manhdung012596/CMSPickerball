@@ -1,0 +1,168 @@
+@model IEnumerable<SoccerPitchMvc.Models.Booking>
+
+@{
+    ViewData["Title"] = "Lịch Sử Đặt Sân";
+    var customer = ViewBag.Customer as SoccerPitchMvc.Models.Customer;
+    int totalBookings = (int)ViewBag.TotalBookings;
+    int totalPaid = (int)ViewBag.TotalPaid;
+    decimal totalRevenue = (decimal)ViewBag.TotalRevenue;
+}
+
+<div class="container-fluid mt-2">
+
+    @* Header *@
+    <div class="d-flex align-items-center gap-3 mb-4 pb-2 border-bottom">
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div class="flex-grow-1">
+            <h2 class="fw-bold text-dark mb-0">
+                <i class="fa-solid fa-history text-info"></i> Lịch Sử Đặt Sân
+            </h2>
+            <p class="text-muted mb-0 small">
+                Khách hàng: <strong>@customer?.FullName</strong>
+                &nbsp;|&nbsp;
+                <i class="fa-solid fa-phone me-1"></i>@customer?.PhoneNumber
+                @if (!string.IsNullOrEmpty(customer?.Address))
+                {
+                    <span>&nbsp;|&nbsp;<i class="fa-solid fa-location-dot me-1"></i>@customer.Address</span>
+                }
+            </p>
+        </div>
+        <a asp-action="Edit" asp-route-id="@customer?.Id" class="btn btn-outline-warning btn-sm">
+            <i class="bi bi-pencil-square me-1"></i> Sửa thông tin
+        </a>
+    </div>
+
+    @* Thống kê *@
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="bg-primary bg-opacity-10 rounded-circle p-3">
+                        <i class="fa-solid fa-calendar-check text-primary fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Tổng lượt đặt</div>
+                        <div class="fw-bold fs-3 text-primary">@totalBookings</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="bg-success bg-opacity-10 rounded-circle p-3">
+                        <i class="fa-solid fa-cash-register text-success fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Đã thanh toán</div>
+                        <div class="fw-bold fs-3 text-success">@totalPaid</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="bg-warning bg-opacity-10 rounded-circle p-3">
+                        <i class="fa-solid fa-wallet text-warning fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Tổng chi tiêu</div>
+                        <div class="fw-bold fs-5 text-warning">@totalRevenue.ToString("#,##0") VNĐ</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Bảng lịch sử *@
+    <div class="card border-0 shadow-sm rounded-3">
+        @if (!Model.Any())
+        {
+            <div class="card-body text-center py-5">
+                <i class="fa-solid fa-calendar-xmark display-3 text-secondary mb-3 d-block"></i>
+                <h5 class="text-muted">Chưa có lịch sử đặt sân</h5>
+                <p class="text-muted small">Khách hàng này chưa thực hiện đặt sân nào.</p>
+                <a asp-controller="Bookings" asp-action="Create" class="btn btn-success mt-2">
+                    <i class="bi bi-calendar-plus me-1"></i> Đặt Sân Cho Khách
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th class="py-3 px-4">#</th>
+                                <th class="py-3">Sân</th>
+                                <th class="py-3">Ngày Đặt</th>
+                                <th class="py-3">Khung Giờ</th>
+                                <th class="py-3">Tổng Tiền</th>
+                                <th class="py-3">Ghi Chú</th>
+                                <th class="py-3 text-center">Trạng Thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{ int idx = 1; }
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="px-4 text-muted fw-semibold">@idx</td>
+                                    <td>
+                                        <span class="badge bg-secondary px-3 py-2">@item.Pitch.Name</span>
+                                    </td>
+                                    <td>@item.BookingDate.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        <span class="fw-semibold text-primary">
+                                            <i class="fa-solid fa-clock me-1"></i>
+                                            @item.TimeSlot.StartTime.ToString("HH:mm") – @item.TimeSlot.EndTime.ToString("HH:mm")
+                                        </span>
+                                    </td>
+                                    <td class="fw-bold @(item.Status == 2 ? "text-success" : "text-muted")">
+                                        @item.TotalPrice.ToString("#,##0") VNĐ
+                                    </td>
+                                    <td class="small text-muted">
+                                        @(string.IsNullOrEmpty(item.Note) ? "—" : item.Note)
+                                    </td>
+                                    <td class="text-center">
+                                        @switch (item.Status)
+                                        {
+                                            case 0:
+                                                <span class="badge bg-warning text-dark"><i class="bi bi-clock-history me-1"></i>Chờ xác nhận</span>
+                                                break;
+                                            case 1:
+                                                <span class="badge bg-primary"><i class="bi bi-patch-check me-1"></i>Đã xác nhận</span>
+                                                break;
+                                            case 2:
+                                                <span class="badge bg-success"><i class="bi bi-cash-coin me-1"></i>Đã thanh toán</span>
+                                                break;
+                                            case 3:
+                                                <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Đã hủy</span>
+                                                break;
+                                        }
+                                    </td>
+                                </tr>
+                                idx++;
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-light border-0 py-3 px-4 d-flex justify-content-between">
+                <span class="text-muted small">
+                    Tổng <strong>@totalBookings</strong> lượt đặt
+                </span>
+                @if (totalRevenue > 0)
+                {
+                    <span class="fw-bold text-success">
+                        <i class="fa-solid fa-wallet me-1"></i> Tổng chi tiêu: @totalRevenue.ToString("#,##0") VNĐ
+                    </span>
+                }
+            </div>
+        }
+    </div>
+</div>

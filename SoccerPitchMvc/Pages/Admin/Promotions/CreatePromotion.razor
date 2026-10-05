@@ -144,7 +144,9 @@
                         <label class="form-label fw-semibold">Trạng thái phát hành</label>
                         <div class="row g-3">
                             <div class="col-md-4">
-                                <div class="card p-3 border cursor-pointer @(Model.Status == 1 ? "border-success bg-success bg-opacity-5" : "")" @onclick="() => Model.Status = 1">
+                                <div class="card p-3 border cursor-pointer" 
+                                     style="background-color: @(Model.Status == 1 ? "rgba(25, 135, 84, 0.08)" : "#ffffff"); border-color: @(Model.Status == 1 ? "#198754" : "#dee2e6") !important;" 
+                                     @onclick="() => Model.Status = 1">
                                     <div class="d-flex align-items-center">
                                         <input type="radio" name="status" class="form-check-input me-2" checked="@(Model.Status == 1)" />
                                         <div>
@@ -155,7 +157,9 @@
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <div class="card p-3 border cursor-pointer @(Model.Status == 0 ? "border-warning bg-warning bg-opacity-5" : "")" @onclick="() => Model.Status = 0">
+                                <div class="card p-3 border cursor-pointer" 
+                                     style="background-color: @(Model.Status == 0 ? "rgba(255, 193, 7, 0.08)" : "#ffffff"); border-color: @(Model.Status == 0 ? "#ffc107" : "#dee2e6") !important;" 
+                                     @onclick="() => Model.Status = 0">
                                     <div class="d-flex align-items-center">
                                         <input type="radio" name="status" class="form-check-input me-2" checked="@(Model.Status == 0)" />
                                         <div>
@@ -166,7 +170,9 @@
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <div class="card p-3 border cursor-pointer @(Model.Status == 2 ? "border-danger bg-danger bg-opacity-5" : "")" @onclick="() => Model.Status = 2">
+                                <div class="card p-3 border cursor-pointer" 
+                                     style="background-color: @(Model.Status == 2 ? "rgba(220, 53, 69, 0.08)" : "#ffffff"); border-color: @(Model.Status == 2 ? "#dc3545" : "#dee2e6") !important;" 
+                                     @onclick="() => Model.Status = 2">
                                     <div class="d-flex align-items-center">
                                         <input type="radio" name="status" class="form-check-input me-2" checked="@(Model.Status == 2)" />
                                         <div>
@@ -201,7 +207,8 @@
                 <h6 class="mb-0 fw-bold"><i class="fas fa-eye me-2 text-info"></i>Xem trước thẻ khuyến mại</h6>
             </div>
             <div class="card-body text-center p-4">
-                <div class="promo-ticket p-3 rounded-3 border-2 border-dashed @(Model.IsCoupon ? "border-info bg-info bg-opacity-5" : "border-warning bg-warning bg-opacity-5")">
+                <div class="promo-ticket p-3 rounded-3 border-2 border-dashed"
+                     style="border-color: @(Model.IsCoupon ? "#0dcaf0" : "#ffc107") !important; background-color: @(Model.IsCoupon ? "rgba(13, 202, 240, 0.08)" : "rgba(255, 193, 7, 0.08)");">
                     <div class="ticket-type small fw-semibold text-uppercase text-muted mb-2">
                         @(Model.IsCoupon ? "MÃ GIẢM GIÁ (COUPON)" : "CHƯƠNG TRÌNH ƯU ĐÃI (OFFER)")
                     </div>

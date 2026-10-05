@@ -220,6 +220,7 @@
                 <h3 class="fw-bold mb-4" style="font-family: 'Outfit'; font-size: 26px;">Gửi tin nhắn phản hồi</h3>
                 
                 <form id="contactForm" onsubmit="submitContactForm(); return false;" class="row g-4">
+                    @Html.AntiForgeryToken()
                     <div class="col-md-6">
                         <label class="form-label-contact">Họ và Tên *</label>
                         <input type="text" class="form-control form-control-contact w-100" id="contactName" required placeholder="Nhập họ và tên..." />
@@ -258,14 +259,50 @@
             const email = document.getElementById('contactEmail').value.trim();
             const phone = document.getElementById('contactPhone').value.trim();
             const message = document.getElementById('contactMessage').value.trim();
+            const tokenInput = document.querySelector('#contactForm input[name="__RequestVerificationToken"]');
+            const token = tokenInput ? tokenInput.value : '';
             
             if (!name || !email || !message) {
                 alert('Vui lòng điền các trường bắt buộc (*)');
                 return;
             }
+
+            const submitBtn = document.querySelector('#contactForm button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Đang gửi...';
             
-            alert(`📨 Gửi tin nhắn thành công!\n\nCảm ơn ${name} đã gửi liên hệ. Chúng tôi đã nhận được thông tin phản hồi của bạn và sẽ phản hồi sớm nhất qua email: ${email}.`);
-            document.getElementById('contactForm').reset();
+            const formData = new URLSearchParams();
+            formData.append('name', name);
+            formData.append('email', email);
+            formData.append('phone', phone);
+            formData.append('message', message);
+            formData.append('__RequestVerificationToken', token);
+
+            fetch('/Home/SubmitFeedback', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: formData.toString()
+            })
+            .then(res => res.json())
+            .then(data => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+
+                if (data.success) {
+                    alert('📨 ' + data.message);
+                    document.getElementById('contactForm').reset();
+                } else {
+                    alert('⚠ ' + data.message);
+                }
+            })
+            .catch(err => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+                alert('⚠ Đã xảy ra lỗi kết nối. Vui lòng thử lại sau.');
+            });
         }
     </script>
 }

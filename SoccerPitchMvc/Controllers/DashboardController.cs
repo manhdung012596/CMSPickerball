@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SoccerPitchMvc.Data;
@@ -9,6 +10,7 @@ namespace SoccerPitchMvc.Controllers;
 /// <summary>
 /// Controller xử lý hiển thị Báo cáo - Thống kê (Dashboard).
 /// </summary>
+[Authorize(Roles = "Admin,Staff")]
 public class DashboardController : Controller
 {
     private readonly ApplicationDbContext _context;

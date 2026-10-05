@@ -21,7 +21,7 @@
 <!-- Stats Row -->
 <div class="row g-3 mb-4">
     <div class="col-md-3">
-        <div class="card border-0 shadow-sm h-100 bg-info bg-opacity-5 border-start border-info border-3">
+        <div class="card border-0 shadow-sm h-100 border-start border-info border-3" style="background-color: rgba(13, 202, 240, 0.08);">
             <div class="card-body py-3">
                 <div class="small text-muted fw-semibold text-uppercase">Tổng số mã</div>
                 <div class="fs-2 fw-bold text-info">@Promotions.Count</div>
@@ -29,7 +29,7 @@
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card border-0 shadow-sm h-100 bg-success bg-opacity-5 border-start border-success border-3">
+        <div class="card border-0 shadow-sm h-100 border-start border-success border-3" style="background-color: rgba(25, 135, 84, 0.08);">
             <div class="card-body py-3">
                 <div class="small text-muted fw-semibold text-uppercase">Đang hoạt động</div>
                 <div class="fs-2 fw-bold text-success">@Promotions.Count(p => p.IsActive)</div>
@@ -37,7 +37,7 @@
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card border-0 shadow-sm h-100 bg-primary bg-opacity-5 border-start border-primary border-3">
+        <div class="card border-0 shadow-sm h-100 border-start border-primary border-3" style="background-color: rgba(13, 110, 253, 0.08);">
             <div class="card-body py-3">
                 <div class="small text-muted fw-semibold text-uppercase">Tổng lượt đã dùng</div>
                 <div class="fs-2 fw-bold text-primary">@Promotions.Sum(p => p.UsageCount)</div>
@@ -45,7 +45,7 @@
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card border-0 shadow-sm h-100 bg-danger bg-opacity-5 border-start border-danger border-3">
+        <div class="card border-0 shadow-sm h-100 border-start border-danger border-3" style="background-color: rgba(220, 53, 69, 0.08);">
             <div class="card-body py-3">
                 <div class="small text-muted fw-semibold text-uppercase">Hết hạn / Hết lượt</div>
                 <div class="fs-2 fw-bold text-danger">@Promotions.Count(p => p.IsExpired || p.IsLimitReached)</div>

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SoccerPitchMvc.Data;
@@ -9,6 +10,7 @@ namespace SoccerPitchMvc.Controllers;
 /// Controller quản lý danh sách sân bóng (Pitches).
 /// Hỗ trợ các thao tác CRUD: Xem danh sách, Chi tiết, Thêm mới, Chỉnh sửa, và Xóa mềm (Soft Delete).
 /// </summary>
+[Authorize(Roles = "Admin,Staff")]
 public class PitchesController : Controller
 {
     private readonly ApplicationDbContext _context;

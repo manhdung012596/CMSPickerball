@@ -1,0 +1,117 @@
+@model SoccerPitchMvc.Models.CashTransaction
+
+@{
+    ViewData["Title"] = ViewBag.TransactionType == 1 ? "Lập Phiếu Thu" : "Lập Phiếu Chi";
+    int txType = (int)ViewBag.TransactionType;
+    var catNames = ViewBag.CategoryNames as Dictionary<int, string> ?? new();
+    var pmNames = ViewBag.PaymentMethodNames as Dictionary<int, string> ?? new();
+
+    // Lọc danh mục theo loại giao dịch
+    var filteredCats = txType == 1
+        ? catNames.Where(c => c.Key >= 10 && c.Key < 20).ToDictionary(c => c.Key, c => c.Value)
+        : catNames.Where(c => c.Key >= 20).ToDictionary(c => c.Key, c => c.Value);
+
+    string color = txType == 1 ? "success" : "danger";
+    string icon = txType == 1 ? "fa-money-bill-wave" : "fa-file-invoice-dollar";
+}
+
+<div class="container mt-2" style="max-width: 660px;">
+    <div class="d-flex align-items-center gap-3 mb-4 pb-2 border-bottom">
+        <a asp-action="@(txType == 1 ? "Income" : "Expense")" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h2 class="fw-bold text-dark mb-0">
+                <i class="fa-solid @icon text-@color"></i> @ViewData["Title"]
+            </h2>
+            <p class="text-muted mb-0 small">Ghi nhận khoản @(txType == 1 ? "thu" : "chi") vào sổ quỹ</p>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-body p-4">
+            <form asp-action="Create" method="post">
+                <input type="hidden" asp-for="TransactionType" />
+                <div asp-validation-summary="All" class="alert alert-danger rounded-3 small"></div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="TransactionCode" class="form-label fw-semibold">Mã Phiếu</label>
+                        <input asp-for="TransactionCode" class="form-control" placeholder="Tự động tạo nếu bỏ trống" />
+                        <div class="form-text">Để trống để hệ thống tự sinh mã</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="TransactionDate" class="form-label fw-semibold">
+                            <i class="fa-solid fa-calendar text-@color me-1"></i> Ngày Giao Dịch <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="TransactionDate" type="datetime-local" class="form-control"
+                               value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+                        <span asp-validation-for="TransactionDate" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="Category" class="form-label fw-semibold">
+                            <i class="fa-solid fa-tags text-@color me-1"></i> Khoản @(txType == 1 ? "Thu" : "Chi") <span class="text-danger">*</span>
+                        </label>
+                        <select asp-for="Category" class="form-select">
+                            @foreach (var kv in filteredCats)
+                            {
+                                <option value="@kv.Key">@kv.Value</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-md-7">
+                        <label asp-for="Amount" class="form-label fw-semibold">
+                            <i class="fa-solid fa-money-bill text-@color me-1"></i> Số Tiền (VNĐ) <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="Amount" type="number" min="1" step="1000" class="form-control form-control-lg" placeholder="0" />
+                        <span asp-validation-for="Amount" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-5">
+                        <label asp-for="PaymentMethod" class="form-label fw-semibold">
+                            <i class="fa-solid fa-credit-card text-@color me-1"></i> Hình Thức
+                        </label>
+                        <select asp-for="PaymentMethod" class="form-select">
+                            @foreach (var kv in pmNames)
+                            {
+                                <option value="@kv.Key">@kv.Value</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="PayerPayee" class="form-label fw-semibold">
+                            <i class="fa-solid fa-user text-@color me-1"></i> @(txType == 1 ? "Người Nộp Tiền" : "Người Nhận Tiền") <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="PayerPayee" class="form-control" placeholder="Tên khách hàng / nhà cung cấp..." />
+                        <span asp-validation-for="PayerPayee" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="Notes" class="form-label fw-semibold">
+                            <i class="fa-solid fa-note-sticky text-@color me-1"></i> Ghi Chú
+                            <span class="text-muted fw-normal">(tùy chọn)</span>
+                        </label>
+                        <textarea asp-for="Notes" class="form-control" rows="2" placeholder="Nội dung chi tiết..."></textarea>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-3 justify-content-end pt-4 border-top mt-3">
+                    <a asp-action="@(txType == 1 ? "Income" : "Expense")" class="btn btn-outline-secondary px-4">
+                        <i class="bi bi-x-lg me-1"></i> Hủy
+                    </a>
+                    <button type="submit" class="btn btn-@color btn-lg px-5 shadow-sm">
+                        <i class="bi bi-save me-1"></i> Lưu Phiếu @(txType == 1 ? "Thu" : "Chi")
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

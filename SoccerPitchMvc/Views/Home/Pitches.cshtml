@@ -1,6 +1,16 @@
 @{
     Layout = "_PublicLayout";
     ViewData["Title"] = "Sân bãi & Bảng giá";
+    var pitches = ViewBag.Pitches as List<SoccerPitchMvc.Models.Pitch> ?? new();
+
+    string TypeLabel(int t) => t switch { 1 => "Sân đơn", 2 => "Sân đôi", 3 => "Sân tiêu chuẩn", _ => "Sân Pickleball" };
+
+    string[] imgUrls = {
+        "/images/courts/court_1.png",
+        "/images/courts/court_2.png",
+        "/images/courts/court_3.png",
+        "/images/courts/court_4.png"
+    };
 }
 
 @section Styles {
@@ -297,87 +307,44 @@
             </div>
             
             <div class="row">
-                <!-- Sân A -->
-                <div class="col-md-6">
-                    <div class="court-card-full">
-                        <div class="court-img-full-wrapper">
-                            <img src="https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=400&h=300&q=80" alt="Sân A" class="court-img-full" />
-                            <span class="court-rating-pill"><i class="fa-solid fa-star text-warning"></i> 4.9</span>
-                            <span class="court-capacity-pill">Sân 5 người</span>
-                        </div>
-                        <div class="court-content-full">
-                            <h3 class="court-name-full">Sân Pickleball A</h3>
-                            <div class="court-price-full">130.000đ <span>/ giờ</span></div>
-                            <div class="court-amenities">
-                                <span class="amenity-badge"><i class="fa-solid fa-lightbulb"></i> Đèn LED</span>
-                                <span class="amenity-badge"><i class="fa-solid fa-shield-halved"></i> Mái che</span>
-                                <span class="amenity-badge"><i class="fa-solid fa-bottle-water"></i> Nước miễn phí</span>
+                @if (!pitches.Any())
+                {
+                    <div class="col-12 text-center py-5">
+                        <i class="fa-solid fa-circle-exclamation display-3 text-secondary mb-3 d-block"></i>
+                        <p class="text-muted">Hiện chưa có sân nào. Vui lòng quay lại sau.</p>
+                    </div>
+                }
+                @{ int pIdx = 0; }
+                @foreach (var pitch in pitches)
+                {
+                    string img = imgUrls[pIdx % imgUrls.Length];
+                    pIdx++;
+                    <div class="col-md-6">
+                        <div class="court-card-full">
+                            <div class="court-img-full-wrapper">
+                                <img src="@img" alt="@pitch.Name" class="court-img-full" />
+                                <span class="court-rating-pill"><i class="fa-solid fa-star text-warning"></i> 5.0</span>
+                                <span class="court-capacity-pill">@TypeLabel(pitch.Type)</span>
                             </div>
-                            <a href="/Home/Booking" class="btn-booking-full">Đặt sân ngay</a>
+                            <div class="court-content-full">
+                                <h3 class="court-name-full">@pitch.Name</h3>
+                                <div class="court-price-full">@pitch.PricePerHour.ToString("#,##0")đ <span>/ giờ</span></div>
+                                <div class="court-amenities">
+                                    <span class="amenity-badge"><i class="fa-solid fa-lightbulb"></i> Đèn LED</span>
+                                    <span class="amenity-badge"><i class="fa-solid fa-shield-halved"></i> Mái che</span>
+                                    <span class="amenity-badge"><i class="fa-solid fa-bottle-water"></i> Nước miễn phí</span>
+                                    @if (pitch.TimeSlots.Any())
+                                    {
+                                        <span class="amenity-badge"><i class="fa-solid fa-clock"></i> @pitch.TimeSlots.Count khung giờ</span>
+                                    }
+                                </div>
+                                <a href="/Home/Booking?pitchId=@pitch.Id" class="btn-booking-full">Đặt sân ngay</a>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <!-- Sân B -->
-                <div class="col-md-6">
-                    <div class="court-card-full">
-                        <div class="court-img-full-wrapper">
-                            <img src="https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?auto=format&fit=crop&w=400&h=300&q=80" alt="Sân B" class="court-img-full" />
-                            <span class="court-rating-pill"><i class="fa-solid fa-star text-warning"></i> 4.8</span>
-                            <span class="court-capacity-pill">Sân 5 người</span>
-                        </div>
-                        <div class="court-content-full">
-                            <h3 class="court-name-full">Sân Pickleball B</h3>
-                            <div class="court-price-full">130.000đ <span>/ giờ</span></div>
-                            <div class="court-amenities">
-                                <span class="amenity-badge"><i class="fa-solid fa-lightbulb"></i> Đèn LED</span>
-                                <span class="amenity-badge"><i class="fa-solid fa-shield-halved"></i> Ngoài trời</span>
-                                <span class="amenity-badge"><i class="fa-solid fa-bottle-water"></i> Nước miễn phí</span>
-                            </div>
-                            <a href="/Home/Booking" class="btn-booking-full">Đặt sân ngay</a>
-                        </div>
-                    </div>
-                </div>
-                <!-- Sân C -->
-                <div class="col-md-6">
-                    <div class="court-card-full">
-                        <div class="court-img-full-wrapper">
-                            <img src="https://images.unsplash.com/photo-1530541930197-ff16ac917b0e?auto=format&fit=crop&w=400&h=300&q=80" alt="Sân C" class="court-img-full" />
-                            <span class="court-rating-pill"><i class="fa-solid fa-star text-warning"></i> 4.7</span>
-                            <span class="court-capacity-pill">Sân 7 người</span>
-                        </div>
-                        <div class="court-content-full">
-                            <h3 class="court-name-full">Sân Pickleball C</h3>
-                            <div class="court-price-full">130.000đ <span>/ giờ</span></div>
-                            <div class="court-amenities">
-                                <span class="amenity-badge"><i class="fa-solid fa-lightbulb"></i> Đèn LED</span>
-                                <span class="amenity-badge"><i class="fa-solid fa-shield-halved"></i> Mái che</span>
-                                <span class="amenity-badge"><i class="fa-solid fa-fan"></i> Quạt làm mát</span>
-                            </div>
-                            <a href="/Home/Booking" class="btn-booking-full">Đặt sân ngay</a>
-                        </div>
-                    </div>
-                </div>
-                <!-- Sân D -->
-                <div class="col-md-6">
-                    <div class="court-card-full">
-                        <div class="court-img-full-wrapper">
-                            <img src="https://images.unsplash.com/photo-1519766304817-4f37bda74a27?auto=format&fit=crop&w=400&h=300&q=80" alt="Sân D" class="court-img-full" />
-                            <span class="court-rating-pill"><i class="fa-solid fa-star text-warning"></i> 4.9</span>
-                            <span class="court-capacity-pill">Sân 7 người</span>
-                        </div>
-                        <div class="court-content-full">
-                            <h3 class="court-name-full">Sân Pickleball D</h3>
-                            <div class="court-price-full">130.000đ <span>/ giờ</span></div>
-                            <div class="court-amenities">
-                                <span class="amenity-badge"><i class="fa-solid fa-lightbulb"></i> Đèn LED</span>
-                                <span class="amenity-badge"><i class="fa-solid fa-shield-halved"></i> Ngoài trời</span>
-                                <span class="amenity-badge"><i class="fa-solid fa-wifi"></i> Wifi miễn phí</span>
-                            </div>
-                            <a href="/Home/Booking" class="btn-booking-full">Đặt sân ngay</a>
-                        </div>
-                    </div>
-                </div>
+                }
             </div>
+
         </div>
         
         <!-- Right: Pricing Table -->

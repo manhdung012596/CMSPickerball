@@ -1,0 +1,318 @@
+@startuml ClassDiagram_CMSPickleball
+' ============================================================
+' BIỂU ĐỒ LỚP (CLASS DIAGRAM) - CMS PICKLEBALL
+' Thiết kế theo chuẩn hệ thống Quản lý Sân thể thao & Cửa hàng Pickleball
+' ============================================================
+
+skinparam classAttributeIconSize 0
+skinparam monochrome true
+skinparam shadowing false
+skinparam handwritten false
+skinparam defaultFontName "Arial"
+skinparam classFontSize 12
+skinparam classAttributeFontSize 11
+skinparam roundcorner 4
+skinparam linetype ortho
+
+' ============================================================
+' 1. MODULE: TÀI KHOẢN & PHÂN QUYỀN (IDENTITY)
+' ============================================================
+class "AppUsers" as AppUsers {
+  + Id: nvarchar(450) {PK}
+  + UserName: nvarchar(256)
+  + Email: nvarchar(256)
+  + PasswordHash: nvarchar(max)
+  + PhoneNumber: nvarchar(50)
+  + EmailConfirmed: bit
+  --
+  + login(): bool
+  + register(): bool
+  + changePassword(): void
+  + updateProfile(): void
+}
+
+class "AppRoles" as AppRoles {
+  + Id: nvarchar(450) {PK}
+  + Name: nvarchar(256)
+  + NormalizedName: nvarchar(256)
+  --
+  + addRole(): void
+  + updateRole(): void
+}
+
+class "AppUserRoles" as AppUserRoles {
+  + UserId: nvarchar(450) {PK, FK}
+  + RoleId: nvarchar(450) {PK, FK}
+  --
+  + assignRole(): void
+}
+
+' ============================================================
+' 2. MODULE: KHÁCH HÀNG & ĐẶT SÂN
+' ============================================================
+class "Customers" as Customers {
+  + Id: int {PK}
+  + UserId: nvarchar(450) {FK}
+  + FullName: nvarchar(100)
+  + PhoneNumber: nvarchar(15)
+  + Address: nvarchar(200)
+  --
+  + bookPitch(): Booking
+  + placeOrder(): Order
+  + updateInfo(): void
+}
+
+class "Pitches" as Pitches {
+  + Id: int {PK}
+  + Name: nvarchar(100)
+  + Type: int
+  + PricePerHour: decimal(18,2)
+  + Status: int
+  + CreatedDate: datetime
+  --
+  + addPitch(): void
+  + updatePitch(): void
+  + getAvailableSlots(): List
+}
+
+class "TimeSlots" as TimeSlots {
+  + Id: int {PK}
+  + PitchId: int {FK}
+  + StartTime: time
+  + EndTime: time
+  + PriceOverride: decimal(18,2)
+  --
+  + setSlot(): void
+  + getPrice(): decimal
+}
+
+class "DefaultTimeSlots" as DefaultTimeSlots {
+  + Id: int {PK}
+  + Name: nvarchar(100)
+  + StartHour: int
+  + StartMinute: int
+  + EndHour: int
+  + EndMinute: int
+  + DayType: int
+  + PriceOverride: decimal(18,2)
+  + Status: int
+  + SortOrder: int
+  + CreatedAt: datetime
+  --
+  + createDefaultSlot(): void
+  + applyToPitch(): void
+}
+
+class "Bookings" as Bookings {
+  + Id: int {PK}
+  + CustomerId: int {FK}
+  + PitchId: int {FK}
+  + TimeSlotId: int {FK}
+  + BookingDate: date
+  + Status: int
+  + TotalPrice: decimal(18,2)
+  + Note: nvarchar(500)
+  + CreatedAt: datetime
+  --
+  + createBooking(): void
+  + confirmBooking(): void
+  + cancelBooking(): void
+  + calculatePrice(): decimal
+}
+
+class "ServicePrices" as ServicePrices {
+  + Id: int {PK}
+  + ServiceName: nvarchar(150)
+  + Description: nvarchar(500)
+  + ServiceType: int
+  + Price: decimal(18,2)
+  + PriceUnit: nvarchar(50)
+  + Note: nvarchar(200)
+  + Status: int
+  + SortOrder: int
+  --
+  + setServicePrice(): void
+  + getServicePrice(): decimal
+}
+
+' ============================================================
+' 3. MODULE: CỬA HÀNG, SẢN PHẨM & KHO
+' ============================================================
+class "ProductCategories" as ProductCategories {
+  + Id: int {PK}
+  + Name: nvarchar(150)
+  + Description: nvarchar(500)
+  + IconClass: nvarchar(200)
+  + ParentId: int {FK}
+  + SortOrder: int
+  + Status: int
+  --
+  + createCategory(): void
+  + listProducts(): List
+}
+
+class "Units" as Units {
+  + Id: int {PK}
+  + Name: nvarchar(50)
+  + Symbol: nvarchar(20)
+  + Description: nvarchar(200)
+  + Status: int
+  + SortOrder: int
+  --
+  + createUnit(): void
+  + updateUnit(): void
+}
+
+class "Products" as Products {
+  + Id: int {PK}
+  + Name: nvarchar(200)
+  + SKU: nvarchar(50) {Unique}
+  + CategoryId: int {FK}
+  + UnitId: int {FK}
+  + PurchasePrice: decimal(18,2)
+  + SellingPrice: decimal(18,2)
+  + StockQuantity: int
+  + ImageUrl: nvarchar(500)
+  + Description: nvarchar(1000)
+  + Status: int
+  + CreatedAt: datetime
+  --
+  + addProduct(): void
+  + updateStock(qty: int): void
+  + getPrice(): decimal
+}
+
+class "Orders" as Orders {
+  + Id: int {PK}
+  + OrderCode: nvarchar(50) {Unique}
+  + CustomerId: int {FK}
+  + CustomerName: nvarchar(100)
+  + CustomerPhone: nvarchar(20)
+  + OrderDate: datetime
+  + TotalAmount: decimal(18,2)
+  + DiscountAmount: decimal(18,2)
+  + FinalAmount: decimal(18,2)
+  + PaymentMethod: int
+  + PaymentStatus: int
+  + OrderStatus: int
+  + Notes: nvarchar(500)
+  + CreatedAt: datetime
+  --
+  + createOrder(): void
+  + updateStatus(): void
+  + cancelOrder(): void
+  + calculateTotal(): decimal
+}
+
+class "OrderDetails" as OrderDetails {
+  + Id: int {PK}
+  + OrderId: int {FK}
+  + ProductId: int {FK}
+  + ProductName: nvarchar(200)
+  + Quantity: int
+  + Price: decimal(18,2)
+  + TotalPrice: decimal(18,2)
+  --
+  + addDetail(): void
+  + calcSubTotal(): decimal
+}
+
+class "StockImports" as StockImports {
+  + Id: int {PK}
+  + ImportCode: nvarchar(50) {Unique}
+  + SupplierName: nvarchar(150)
+  + ImportDate: datetime
+  + TotalAmount: decimal(18,2)
+  + Notes: nvarchar(500)
+  + CreatedAt: datetime
+  --
+  + createImport(): void
+  + calculateTotal(): decimal
+}
+
+class "StockImportDetails" as StockImportDetails {
+  + Id: int {PK}
+  + StockImportId: int {FK}
+  + ProductId: int {FK}
+  + ProductName: nvarchar(200)
+  + Quantity: int
+  + PurchasePrice: decimal(18,2)
+  + TotalPrice: decimal(18,2)
+  --
+  + addImportDetail(): void
+  + updateInventory(): void
+}
+
+' ============================================================
+' 4. MODULE: KHUYẾN MẠI & SỔ QUỸ TÀI CHÍNH
+' ============================================================
+class "Promotions" as Promotions {
+  + Id: int {PK}
+  + Name: nvarchar(200)
+  + Code: nvarchar(50) {Unique}
+  + Description: nvarchar(500)
+  + DiscountType: int
+  + DiscountValue: decimal(18,2)
+  + MinOrderAmount: decimal(18,2)
+  + MaxDiscountAmount: decimal(18,2)
+  + StartDate: datetime
+  + EndDate: datetime
+  + UsageLimit: int
+  + UsageCount: int
+  + Status: int
+  + IsCoupon: bool
+  + CreatedAt: datetime
+  --
+  + createPromotion(): void
+  + applyDiscount(amount: decimal): decimal
+  + validateCode(): bool
+}
+
+class "CashTransactions" as CashTransactions {
+  + Id: int {PK}
+  + TransactionCode: nvarchar(50) {Unique}
+  + TransactionType: int
+  + Category: int
+  + Amount: decimal(18,2)
+  + TransactionDate: datetime
+  + PayerPayee: nvarchar(150)
+  + PaymentMethod: int
+  + Notes: nvarchar(500)
+  + CreatedAt: datetime
+  --
+  + createTransaction(): void
+  + getBalance(): decimal
+}
+
+' ============================================================
+' 5. QUAN HỆ GIỮA CÁC LỚP (RELATIONSHIPS)
+' ============================================================
+
+' Phân quyền tài khoản
+AppUsers "1" *-- "0..*" AppUserRoles
+AppRoles "1" *-- "0..*" AppUserRoles
+AppUsers "0..1" <-- "1" Customers : "liên kết tài khoản"
+
+' Khách hàng & Đặt sân / Đơn hàng
+Customers "1" --> "0..*" Bookings
+Customers "0..1" --> "0..*" Orders
+
+' Sân bóng & Khung giờ & Đặt sân
+Pitches "1" *-- "0..*" TimeSlots
+Pitches "1" --> "0..*" Bookings
+TimeSlots "1" --> "0..*" Bookings
+
+' Danh mục, Đơn vị tính & Sản phẩm
+ProductCategories "0..1" <-- "0..*" ProductCategories : "danh mục cha"
+ProductCategories "1" --> "0..*" Products
+Units "1" --> "0..*" Products
+
+' Bán lẻ POS & Chi tiết đơn hàng
+Orders "1" *-- "1..*" OrderDetails
+Products "1" --> "0..*" OrderDetails
+
+' Nhập kho & Chi tiết nhập kho
+StockImports "1" *-- "1..*" StockImportDetails
+Products "1" --> "0..*" StockImportDetails
+
+@enduml

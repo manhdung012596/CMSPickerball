@@ -1,0 +1,434 @@
+@page "/admin/authorization"
+@layout AdminLayout
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@inject UserManager<IdentityUser> UserManager
+@inject RoleManager<IdentityRole> RoleManager
+@inject SoccerPitchMvc.Services.ToastService Toast
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
+@if (!IsAdmin)
+{
+    <div class="container-fluid mt-4">
+        <div class="card shadow-sm border-0 rounded-3">
+            <div class="card-body p-5 text-center">
+                <i class="fa-solid fa-circle-exclamation text-danger fs-1 mb-3"></i>
+                <h4 class="fw-bold text-dark">Quyền Truy Cập Bị Từ Chối!</h4>
+                <p class="text-muted">Chức năng Phân Quyền Tài Khoản chỉ dành riêng cho Quản trị viên (Admin).</p>
+                <p class="text-muted mb-4">Tài khoản hiện tại của bạn không có đủ thẩm quyền để xem trang này.</p>
+                <a href="/admin/dashboard" class="btn btn-primary px-4 py-2 fw-semibold">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Quay về Trang chủ
+                </a>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="container-fluid mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+            <div>
+                <h2 class="fw-bold text-dark mb-1"><i class="fa-solid fa-user-shield text-primary me-2"></i> Phân Quyền Tài Khoản</h2>
+                <p class="text-muted">Quản lý danh sách người dùng và gán vai trò quyền hạn (Quản trị viên hoặc Nhân viên)</p>
+            </div>
+        </div>
+
+        @if (errorMessage != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i> @errorMessage
+                <button type="button" class="btn-close" @onclick="() => errorMessage = null" aria-label="Close"></button>
+            </div>
+        }
+
+        @if (successMessage != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle-fill me-1"></i> @successMessage
+                <button type="button" class="btn-close" @onclick="() => successMessage = null" aria-label="Close"></button>
+            </div>
+        }
+
+        <div class="row g-4">
+            <!-- Tạo tài khoản mới -->
+            <div class="col-lg-4">
+                <div class="card shadow-sm border-0 rounded-3">
+                    <div class="card-header bg-primary text-white py-3">
+                        <h5 class="fw-bold mb-0"><i class="fa-solid fa-user-plus me-2"></i>Tạo Tài Khoản Mới</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <EditForm Model="@newUser" OnValidSubmit="HandleCreateUser">
+                            <div class="mb-3">
+                                <label class="form-label text-dark fw-semibold">Địa chỉ Email <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" @bind-value="newUser.Email" required placeholder="nhanvien@domain.com" />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-dark fw-semibold">Mật khẩu khởi tạo <span class="text-danger">*</span></label>
+                                <input type="password" class="form-control" @bind-value="newUser.Password" required placeholder="Mật khẩu ít nhất 6 ký tự" />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-dark fw-semibold">Vai trò phân quyền <span class="text-danger">*</span></label>
+                                <select class="form-select" @bind="newUser.Role">
+                                    <option value="Staff">Nhân viên (Staff)</option>
+                                    <option value="Admin">Quản trị viên (Admin)</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold shadow-sm mt-2">
+                                <i class="fa-solid fa-check me-1"></i> Tạo tài khoản
+                            </button>
+                        </EditForm>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Danh sách tài khoản -->
+            <div class="col-lg-8">
+                <div class="card shadow-sm border-0 rounded-3">
+                    <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
+                        <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-users text-primary me-2"></i>Danh sách tài khoản hệ thống</h5>
+                        <div class="d-flex gap-2">
+                            <input type="text" class="form-control form-control-sm" placeholder="Tìm kiếm Email..." @bind="SearchQuery" @bind:event="oninput" style="max-width: 200px;" />
+                            <select class="form-select form-select-sm" @bind="FilterRole" style="max-width: 150px;">
+                                <option value="">Tất cả vai trò</option>
+                                <option value="Admin">Admin</option>
+                                <option value="Staff">Nhân viên</option>
+                                <option value="Customer">Khách hàng</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="py-3 px-4">Tài khoản Email</th>
+                                        <th class="py-3">Vai trò hiện tại</th>
+                                        <th class="py-3 text-center" width="220">Thay đổi quyền</th>
+                                        <th class="py-3 text-end px-4" width="100">Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (IsLoading)
+                                    {
+                                        <tr>
+                                            <td colspan="4" class="text-center py-5 text-muted">
+                                                <div class="spinner-border text-primary" role="status">
+                                                    <span class="visually-hidden">Đang tải...</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        var filtered = FilteredUsers();
+                                        if (!filtered.Any())
+                                        {
+                                            <tr>
+                                                <td colspan="4" class="text-center py-5 text-muted">
+                                                    Không tìm thấy tài khoản nào khớp điều kiện lọc.
+                                                </td>
+                                            </tr>
+                                        }
+                                        else
+                                        {
+                                            foreach (var user in filtered)
+                                            {
+                                                <tr>
+                                                    <td class="py-3 px-4 fw-semibold text-dark">
+                                                        @user.Email
+                                                    </td>
+                                                    <td>
+                                                        @if (user.CurrentRole == "Admin")
+                                                        {
+                                                            <span class="badge bg-danger text-white px-2 py-1"><i class="fa-solid fa-shield-halved me-1"></i>Admin</span>
+                                                        }
+                                                        else if (user.CurrentRole == "Staff")
+                                                        {
+                                                            <span class="badge bg-warning text-dark px-2 py-1"><i class="fa-solid fa-user-tie me-1"></i>Nhân viên</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge bg-secondary text-white px-2 py-1"><i class="fa-solid fa-user me-1"></i>Khách hàng</span>
+                                                        }
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <div class="d-flex justify-content-center gap-1">
+                                                            <button class="btn btn-sm btn-outline-danger" disabled="@(user.CurrentRole == "Admin")" @onclick='() => ChangeUserRole(user, "Admin")'>
+                                                                Lên Admin
+                                                            </button>
+                                                            <button class="btn btn-sm btn-outline-warning" disabled="@(user.CurrentRole == "Staff")" @onclick='() => ChangeUserRole(user, "Staff")'>
+                                                                Lên NV
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                    <td class="py-3 text-end px-4">
+                                                        @if (!user.Email.Equals("admin@elitepickleball.com", StringComparison.OrdinalIgnoreCase))
+                                                        {
+                                                            <button class="btn btn-sm btn-outline-danger" title="Xóa tài khoản" @onclick="() => ConfirmDelete(user)">
+                                                                <i class="fa-solid fa-trash-can"></i>
+                                                            </button>
+                                                        }
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (ShowDeleteDialog && UserToDelete != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-circle-exclamation me-1"></i> Xác Nhận Xóa</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CancelDelete"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="mb-0">Bạn có chắc chắn muốn xóa tài khoản <strong>@UserToDelete.Email</strong> khỏi hệ thống?</p>
+                    <small class="text-danger">* Hành động này không thể hoàn tác và sẽ xóa bỏ toàn bộ quyền truy cập.</small>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CancelDelete">Hủy</button>
+                    <button type="button" class="btn btn-danger" @onclick="ExecuteDelete">Xác Nhận Xóa</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<UserRoleViewModel> UsersList = new();
+    private bool IsLoading = true;
+    private string errorMessage = null;
+    private string successMessage = null;
+    private bool IsAdmin = false;
+
+    private string SearchQuery = "";
+    private string FilterRole = "";
+
+    private NewUserDto newUser = new();
+    private bool ShowDeleteDialog = false;
+    private UserRoleViewModel UserToDelete = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            IsAdmin = user.IsInRole("Admin");
+        }
+        catch
+        {
+            IsAdmin = false;
+        }
+
+        if (IsAdmin)
+        {
+            await LoadUsers();
+        }
+    }
+
+    private async Task LoadUsers()
+    {
+        IsLoading = true;
+        UsersList.Clear();
+        try
+        {
+            var rawUsers = await UserManager.Users.ToListAsync();
+            foreach (var user in rawUsers)
+            {
+                var roles = await UserManager.GetRolesAsync(user);
+                var role = roles.FirstOrDefault() ?? "Customer";
+
+                UsersList.Add(new UserRoleViewModel
+                {
+                    UserId = user.Id,
+                    Email = user.Email ?? user.UserName ?? "Chưa có email",
+                    CurrentRole = role
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Lỗi khi lấy danh sách tài khoản: " + ex.Message;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private List<UserRoleViewModel> FilteredUsers()
+    {
+        var query = UsersList.AsEnumerable();
+        if (!string.IsNullOrWhiteSpace(SearchQuery))
+        {
+            query = query.Where(u => u.Email.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase));
+        }
+        if (!string.IsNullOrWhiteSpace(FilterRole))
+        {
+            query = query.Where(u => u.CurrentRole == FilterRole);
+        }
+        return query.OrderBy(u => u.CurrentRole).ThenBy(u => u.Email).ToList();
+    }
+
+    private async Task HandleCreateUser()
+    {
+        errorMessage = null;
+        successMessage = null;
+
+        if (string.IsNullOrWhiteSpace(newUser.Email) || string.IsNullOrWhiteSpace(newUser.Password))
+        {
+            Toast.ShowError("Vui lòng nhập Email và Mật khẩu!");
+            return;
+        }
+
+        try
+        {
+            var existing = await UserManager.FindByEmailAsync(newUser.Email);
+            if (existing != null)
+            {
+                Toast.ShowError("Email này đã được đăng ký tài khoản!");
+                return;
+            }
+
+            var user = new IdentityUser
+            {
+                UserName = newUser.Email,
+                Email = newUser.Email,
+                EmailConfirmed = true
+            };
+
+            var result = await UserManager.CreateAsync(user, newUser.Password);
+            if (result.Succeeded)
+            {
+                var roleResult = await UserManager.AddToRoleAsync(user, newUser.Role);
+                if (roleResult.Succeeded)
+                {
+                    Toast.ShowSuccess($"Đã tạo tài khoản {newUser.Email} thành công với quyền {newUser.Role}!");
+                    newUser = new NewUserDto(); // reset form
+                    await LoadUsers();
+                }
+                else
+                {
+                    Toast.ShowWarning("Tạo tài khoản thành công nhưng gán vai trò bị lỗi.");
+                }
+            }
+            else
+            {
+                errorMessage = "Tạo tài khoản thất bại: " + string.Join(", ", result.Errors.Select(e => e.Description));
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Đã xảy ra lỗi: " + ex.Message;
+        }
+    }
+
+    private async Task ChangeUserRole(UserRoleViewModel userVM, string newRole)
+    {
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            var user = await UserManager.FindByIdAsync(userVM.UserId);
+            if (user == null)
+            {
+                Toast.ShowError("Không tìm thấy thông tin tài khoản.");
+                return;
+            }
+
+            var currentRoles = await UserManager.GetRolesAsync(user);
+            var removeResult = await UserManager.RemoveFromRolesAsync(user, currentRoles);
+            if (!removeResult.Succeeded)
+            {
+                Toast.ShowError("Không thể gỡ bỏ vai trò cũ.");
+                return;
+            }
+
+            var addResult = await UserManager.AddToRoleAsync(user, newRole);
+            if (addResult.Succeeded)
+            {
+                Toast.ShowSuccess($"Đã gán vai trò {newRole} cho tài khoản {user.Email} thành công!");
+                await LoadUsers();
+            }
+            else
+            {
+                errorMessage = "Gán vai trò mới thất bại: " + string.Join(", ", addResult.Errors.Select(e => e.Description));
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Lỗi khi đổi quyền: " + ex.Message;
+        }
+    }
+
+    private void ConfirmDelete(UserRoleViewModel userVM)
+    {
+        UserToDelete = userVM;
+        ShowDeleteDialog = true;
+    }
+
+    private void CancelDelete()
+    {
+        UserToDelete = null;
+        ShowDeleteDialog = false;
+    }
+
+    private async Task ExecuteDelete()
+    {
+        if (UserToDelete == null) return;
+
+        try
+        {
+            var user = await UserManager.FindByIdAsync(UserToDelete.UserId);
+            if (user != null)
+            {
+                var result = await UserManager.DeleteAsync(user);
+                if (result.Succeeded)
+                {
+                    Toast.ShowSuccess($"Đã xóa tài khoản {user.Email} thành công!");
+                    await LoadUsers();
+                }
+                else
+                {
+                    Toast.ShowError("Xóa tài khoản thất bại.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Toast.ShowError("Lỗi khi xóa tài khoản: " + ex.Message);
+        }
+        finally
+        {
+            CancelDelete();
+        }
+    }
+
+    public class UserRoleViewModel
+    {
+        public string UserId { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string CurrentRole { get; set; } = "";
+    }
+
+    public class NewUserDto
+    {
+        public string Email { get; set; } = "";
+        public string Password { get; set; } = "";
+        public string Role { get; set; } = "Staff";
+    }
+}

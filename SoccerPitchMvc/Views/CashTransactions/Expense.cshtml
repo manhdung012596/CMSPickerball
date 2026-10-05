@@ -1,0 +1,155 @@
+@model IEnumerable<SoccerPitchMvc.Models.CashTransaction>
+
+@{
+    ViewData["Title"] = "Chi Phí Vận Hành";
+    var catNames = ViewBag.CategoryNames as Dictionary<int, string> ?? new();
+    var pmNames = ViewBag.PaymentMethodNames as Dictionary<int, string> ?? new();
+    int m = (int)ViewBag.Month;
+    int y = (int)ViewBag.Year;
+    decimal total = (decimal)ViewBag.Total;
+}
+
+<div class="container-fluid mt-2">
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 rounded-3 mb-3" role="alert">
+            <i class="fa-solid fa-circle-check me-2"></i> @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">
+                <i class="fa-solid fa-file-invoice-dollar text-danger"></i> Chi Phí Vận Hành
+            </h2>
+            <p class="text-muted mb-0">Ghi nhận các khoản chi phí trong tháng @m/@y</p>
+        </div>
+        <a asp-action="Create" asp-route-type="0" class="btn btn-danger btn-lg shadow-sm">
+            <i class="bi bi-plus-lg me-1"></i> Lập Phiếu Chi
+        </a>
+    </div>
+
+    @* Bộ lọc tháng *@
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-body py-3">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-auto">
+                    <label class="form-label fw-semibold small text-muted mb-1">Tháng</label>
+                    <select name="month" class="form-select" style="width:120px;">
+                        @for (int i = 1; i <= 12; i++)
+                        {
+                            <option value="@i" selected="@(i == m)">Tháng @i</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <label class="form-label fw-semibold small text-muted mb-1">Năm</label>
+                    <select name="year" class="form-select" style="width:110px;">
+                        @for (int i = DateTime.Today.Year - 2; i <= DateTime.Today.Year + 1; i++)
+                        {
+                            <option value="@i" selected="@(i == y)">@i</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search me-1"></i> Xem
+                    </button>
+                </div>
+                <div class="col ms-auto text-end">
+                    <div class="fs-5 fw-bold text-danger">
+                        <i class="fa-solid fa-arrow-trend-down me-1"></i> Tổng chi: @total.ToString("#,##0") VNĐ
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-3">
+        @if (!Model.Any())
+        {
+            <div class="card-body text-center py-5">
+                <i class="fa-solid fa-receipt display-3 text-secondary mb-3 d-block"></i>
+                <h5 class="text-muted">Chưa có phiếu chi nào trong tháng @m/@y</h5>
+                <a asp-action="Create" asp-route-type="0" class="btn btn-danger mt-2">
+                    <i class="bi bi-plus-lg me-1"></i> Lập Phiếu Chi
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-danger">
+                            <tr>
+                                <th class="py-3 px-4">Mã Phiếu</th>
+                                <th class="py-3">Ngày Chi</th>
+                                <th class="py-3">Khoản Chi</th>
+                                <th class="py-3">Người Nhận</th>
+                                <th class="py-3">Hình Thức</th>
+                                <th class="py-3 text-end">Số Tiền</th>
+                                <th class="py-3">Ghi Chú</th>
+                                <th class="py-3 text-end px-4">Xóa</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="px-4 fw-semibold text-danger small">@item.TransactionCode</td>
+                                    <td>@item.TransactionDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>
+                                        <span class="badge bg-danger px-2">
+                                            @(catNames.ContainsKey(item.Category) ? catNames[item.Category] : "Khác")
+                                        </span>
+                                    </td>
+                                    <td class="fw-semibold">@item.PayerPayee</td>
+                                    <td class="small text-muted">
+                                        @(pmNames.ContainsKey(item.PaymentMethod) ? pmNames[item.PaymentMethod] : "—")
+                                    </td>
+                                    <td class="text-end fw-bold text-danger">@item.Amount.ToString("#,##0") VNĐ</td>
+                                    <td class="small text-muted">@(item.Notes ?? "—")</td>
+                                    <td class="text-end px-4">
+                                        <button class="btn btn-outline-danger btn-sm"
+                                                data-bs-toggle="modal" data-bs-target="#del-@item.Id">
+                                            <i class="bi bi-trash-fill"></i>
+                                        </button>
+                                        <div class="modal fade" id="del-@item.Id" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog modal-dialog-centered">
+                                                <div class="modal-content border-0 shadow-lg">
+                                                    <div class="modal-header bg-danger text-white">
+                                                        <h5 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i> Xác nhận xóa</h5>
+                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        Xóa phiếu chi <strong>@item.TransactionCode</strong> — <strong class="text-danger">@item.Amount.ToString("#,##0") VNĐ</strong>?
+                                                    </div>
+                                                    <div class="modal-footer bg-light border-0">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                                        <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline">
+                                                            <button type="submit" class="btn btn-danger px-4"><i class="bi bi-trash-fill me-1"></i> Xóa</button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot class="table-light fw-bold">
+                            <tr>
+                                <td colspan="5" class="py-3 px-4">Tổng cộng (@Model.Count() phiếu)</td>
+                                <td class="text-end text-danger fs-5">@total.ToString("#,##0") VNĐ</td>
+                                <td colspan="2"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        }
+    </div>
+</div>

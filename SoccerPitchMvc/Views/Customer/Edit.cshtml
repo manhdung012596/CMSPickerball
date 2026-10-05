@@ -1,0 +1,68 @@
+@model SoccerPitchMvc.Models.UpdateCustomerDto
+
+@{
+    ViewData["Title"] = "Chỉnh Sửa Khách Hàng";
+}
+
+<div class="container mt-2" style="max-width: 620px;">
+    <div class="d-flex align-items-center gap-3 mb-4 pb-2 border-bottom">
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h2 class="fw-bold text-dark mb-0">
+                <i class="fa-solid fa-user-pen text-warning"></i> Chỉnh Sửa Khách Hàng
+            </h2>
+            <p class="text-muted mb-0 small">Cập nhật thông tin khách hàng</p>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-body p-4">
+            <form asp-action="Edit" method="post">
+                <input type="hidden" asp-for="Id" />
+                <div asp-validation-summary="All" class="alert alert-danger rounded-3 small" role="alert"></div>
+
+                <div class="mb-4">
+                    <label asp-for="FullName" class="form-label fw-semibold">
+                        <i class="fa-solid fa-user text-warning me-1"></i> Họ và Tên
+                        <span class="text-danger">*</span>
+                    </label>
+                    <input asp-for="FullName" class="form-control form-control-lg" />
+                    <span asp-validation-for="FullName" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-4">
+                    <label asp-for="PhoneNumber" class="form-label fw-semibold">
+                        <i class="fa-solid fa-phone text-warning me-1"></i> Số Điện Thoại
+                        <span class="text-danger">*</span>
+                    </label>
+                    <input asp-for="PhoneNumber" class="form-control form-control-lg" type="tel" />
+                    <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-4">
+                    <label asp-for="Address" class="form-label fw-semibold">
+                        <i class="fa-solid fa-location-dot text-warning me-1"></i> Địa Chỉ
+                        <span class="text-muted fw-normal">(tùy chọn)</span>
+                    </label>
+                    <input asp-for="Address" class="form-control" />
+                    <span asp-validation-for="Address" class="text-danger small"></span>
+                </div>
+
+                <div class="d-flex gap-3 justify-content-end pt-3 border-top">
+                    <a asp-action="Index" class="btn btn-outline-secondary px-4">
+                        <i class="bi bi-x-lg me-1"></i> Hủy
+                    </a>
+                    <button type="submit" class="btn btn-warning btn-lg px-5 shadow-sm">
+                        <i class="bi bi-save me-1"></i> Lưu Thay Đổi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

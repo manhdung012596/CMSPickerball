@@ -1,0 +1,132 @@
+@model SoccerPitchMvc.Models.TimeSlot
+
+@{
+    ViewData["Title"] = "Thêm Khung Giờ";
+}
+
+<div class="container mt-2" style="max-width: 680px;">
+    <div class="d-flex align-items-center gap-3 mb-4 pb-2 border-bottom">
+        <a asp-action="Index" asp-route-pitchId="@Model.PitchId" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h2 class="fw-bold text-dark mb-0">
+                <i class="fa-solid fa-clock-rotate-left text-success"></i> Thêm Khung Giờ Mới
+            </h2>
+            <p class="text-muted mb-0 small">Cấu hình khung giờ hoạt động cho sân</p>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-body p-4">
+            <form asp-action="Create" method="post">
+                <div asp-validation-summary="All" class="alert alert-danger rounded-3" role="alert"></div>
+
+                @* Chọn sân *@
+                <div class="mb-4">
+                    <label asp-for="PitchId" class="form-label fw-semibold">
+                        <i class="fa-solid fa-table-tennis-paddle-ball text-success me-1"></i> Sân Pickleball
+                        <span class="text-danger">*</span>
+                    </label>
+                    <select asp-for="PitchId" asp-items="ViewBag.PitchId" class="form-select form-select-lg">
+                        <option value="">-- Chọn sân --</option>
+                    </select>
+                    <span asp-validation-for="PitchId" class="text-danger small"></span>
+                </div>
+
+                @* Khung giờ *@
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label asp-for="StartTime" class="form-label fw-semibold">
+                            <i class="fa-solid fa-play text-primary me-1"></i> Giờ Bắt Đầu
+                            <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="StartTime" type="time" class="form-control form-control-lg"
+                               value="@Model.StartTime.ToString("HH:mm")" />
+                        <span asp-validation-for="StartTime" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="EndTime" class="form-label fw-semibold">
+                            <i class="fa-solid fa-stop text-danger me-1"></i> Giờ Kết Thúc
+                            <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="EndTime" type="time" class="form-control form-control-lg"
+                               value="@Model.EndTime.ToString("HH:mm")" />
+                        <span asp-validation-for="EndTime" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                @* Preview thời lượng *@
+                <div class="alert alert-info border-0 rounded-3 py-2 mb-4" id="durationPreview">
+                    <i class="fa-regular fa-hourglass me-2"></i>
+                    <span id="durationText">Thời lượng: --</span>
+                </div>
+
+                @* Giá riêng (tùy chọn) *@
+                <div class="mb-4">
+                    <label asp-for="PriceOverride" class="form-label fw-semibold">
+                        <i class="fa-solid fa-tag text-warning me-1"></i> Giá Riêng Khung Giờ
+                        <span class="text-muted fw-normal">(tùy chọn)</span>
+                    </label>
+                    <div class="input-group input-group-lg">
+                        <input asp-for="PriceOverride" type="number" class="form-control"
+                               placeholder="Để trống = dùng giá mặc định sân" min="0" step="1000" />
+                        <span class="input-group-text fw-semibold">VNĐ</span>
+                    </div>
+                    <div class="form-text">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Dùng khi khung giờ có giá đặc biệt (giờ cao điểm, giờ sáng sớm...). Để trống sẽ dùng giá mặc định của sân.
+                    </div>
+                    <span asp-validation-for="PriceOverride" class="text-danger small"></span>
+                </div>
+
+                @* Buttons *@
+                <div class="d-flex gap-3 justify-content-end pt-3 border-top">
+                    <a asp-action="Index" asp-route-pitchId="@Model.PitchId" class="btn btn-outline-secondary px-4">
+                        <i class="bi bi-x-lg me-1"></i> Hủy
+                    </a>
+                    <button type="submit" class="btn btn-success btn-lg px-5 shadow-sm">
+                        <i class="bi bi-plus-circle me-1"></i> Thêm Khung Giờ
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        function updateDuration() {
+            const startInput = document.querySelector('input[name="StartTime"]').value;
+            const endInput = document.querySelector('input[name="EndTime"]').value;
+            const preview = document.getElementById('durationText');
+            const previewBox = document.getElementById('durationPreview');
+
+            if (startInput && endInput) {
+                const [sh, sm] = startInput.split(':').map(Number);
+                const [eh, em] = endInput.split(':').map(Number);
+                const totalStart = sh * 60 + sm;
+                const totalEnd = eh * 60 + em;
+                const diff = totalEnd - totalStart;
+
+                if (diff <= 0) {
+                    previewBox.className = 'alert alert-danger border-0 rounded-3 py-2 mb-4';
+                    preview.textContent = 'Giờ kết thúc phải sau giờ bắt đầu!';
+                } else {
+                    previewBox.className = 'alert alert-success border-0 rounded-3 py-2 mb-4';
+                    const h = Math.floor(diff / 60);
+                    const m = diff % 60;
+                    let txt = 'Thời lượng: ';
+                    if (h > 0) txt += h + ' giờ ';
+                    if (m > 0) txt += m + ' phút';
+                    preview.textContent = txt;
+                }
+            }
+        }
+
+        document.querySelector('input[name="StartTime"]').addEventListener('change', updateDuration);
+        document.querySelector('input[name="EndTime"]').addEventListener('change', updateDuration);
+        updateDuration();
+    </script>
+}

@@ -1,0 +1,222 @@
+@model IEnumerable<SoccerPitchMvc.Models.TimeSlot>
+
+@{
+    ViewData["Title"] = "Quản lý Khung Giờ";
+    var selectedPitchId = ViewBag.SelectedPitchId as int?;
+    var grouped = Model.GroupBy(t => t.Pitch).OrderBy(g => g.Key.Name);
+}
+
+<div class="container-fluid mt-2">
+
+    @* Toast Thông báo *@
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 rounded-3 mb-3" role="alert">
+            <i class="fa-solid fa-circle-check me-2"></i> @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 rounded-3 mb-3" role="alert">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i> @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @* Header *@
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">
+                <i class="fa-solid fa-clock text-success"></i> Quản lý Khung Giờ
+            </h2>
+            <p class="text-muted mb-0">Cấu hình khung giờ hoạt động cho từng sân Pickleball</p>
+        </div>
+        <a asp-action="Create" asp-route-pitchId="@selectedPitchId" class="btn btn-success btn-lg shadow-sm">
+            <i class="bi bi-plus-lg"></i> Thêm Khung Giờ
+        </a>
+    </div>
+
+    @* Bộ lọc theo sân *@
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-body py-3">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold small text-muted mb-1">
+                        <i class="fa-solid fa-filter me-1"></i> Lọc theo sân
+                    </label>
+                    <select name="pitchId" id="pitchId" class="form-select" onchange="this.form.submit()">
+                        <option value="">-- Tất cả sân --</option>
+                        @foreach (SelectListItem item in (IEnumerable<SelectListItem>)ViewBag.Pitches)
+                        {
+                            <option value="@item.Value" selected="@item.Selected">@item.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <a asp-action="Index" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i> Xóa lọc
+                    </a>
+                </div>
+                <div class="col ms-auto text-end">
+                    <span class="badge bg-secondary fs-6">
+                        <i class="fa-solid fa-clock me-1"></i> @Model.Count() khung giờ
+                    </span>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @* Danh sách nhóm theo sân *@
+    @if (!Model.Any())
+    {
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body text-center py-5">
+                <i class="fa-solid fa-clock-rotate-left display-3 text-secondary mb-3 d-block"></i>
+                <h5 class="text-muted">Chưa có khung giờ nào được cấu hình</h5>
+                <p class="text-muted small">Nhấn <strong>Thêm Khung Giờ</strong> để bắt đầu cấu hình khung giờ cho các sân.</p>
+                <a asp-action="Create" class="btn btn-success mt-2">
+                    <i class="bi bi-plus-lg"></i> Thêm Khung Giờ Đầu Tiên
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        foreach (var group in grouped)
+        {
+            var pitch = group.Key;
+            string pitchStatusBadge = pitch.Status == 0 ? "success" : "warning";
+            string pitchStatusText = pitch.Status == 0 ? "Hoạt động" : "Bảo trì";
+
+            <div class="card border-0 shadow-sm rounded-3 mb-4">
+                @* Card header - Tên sân *@
+                <div class="card-header bg-white border-bottom py-3 px-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="bg-success bg-opacity-10 rounded-circle p-2">
+                                <i class="fa-solid fa-table-tennis-paddle-ball text-success fs-5"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0 fw-bold text-dark">@pitch.Name</h5>
+                                <small class="text-muted">
+                                    Giá thuê: <strong class="text-success">@pitch.PricePerHour.ToString("N0") VNĐ/giờ</strong>
+                                    &nbsp;|&nbsp;
+                                    <span class="badge bg-@pitchStatusBadge text-white">@pitchStatusText</span>
+                                    &nbsp;|&nbsp;
+                                    <span class="badge bg-info text-white">@group.Count() khung giờ</span>
+                                </small>
+                            </div>
+                        </div>
+                        <a asp-action="Create" asp-route-pitchId="@pitch.Id" class="btn btn-outline-success btn-sm">
+                            <i class="bi bi-plus-lg"></i> Thêm khung giờ cho sân này
+                        </a>
+                    </div>
+                </div>
+
+                @* Table khung giờ *@
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="py-3 px-4" style="width: 60px;">#</th>
+                                    <th class="py-3">Khung Giờ</th>
+                                    <th class="py-3">Thời Lượng</th>
+                                    <th class="py-3">Giá Khung Giờ</th>
+                                    <th class="py-3 text-end px-4">Hành Động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    int slotIndex = 1;
+                                }
+                                @foreach (var slot in group.OrderBy(s => s.StartTime))
+                                {
+                                    var duration = slot.EndTime - slot.StartTime;
+                                    string durationText = duration.Hours > 0
+                                        ? (duration.Minutes > 0 ? $"{duration.Hours}h {duration.Minutes}p" : $"{duration.Hours} giờ")
+                                        : $"{duration.Minutes} phút";
+
+                                    <tr>
+                                        <td class="py-3 px-4 text-muted fw-semibold">@slotIndex</td>
+                                        <td class="py-3">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="badge bg-primary bg-opacity-10 text-primary fs-6 px-3 py-2 rounded-pill fw-bold">
+                                                    <i class="fa-solid fa-clock me-1"></i>
+                                                    @slot.StartTime.ToString("HH:mm") – @slot.EndTime.ToString("HH:mm")
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td class="py-3">
+                                            <span class="text-muted">
+                                                <i class="fa-regular fa-hourglass me-1"></i> @durationText
+                                            </span>
+                                        </td>
+                                        <td class="py-3">
+                                            @if (slot.PriceOverride.HasValue)
+                                            {
+                                                <span class="badge bg-warning text-dark px-3 py-2 rounded-pill">
+                                                    <i class="fa-solid fa-tag me-1"></i>
+                                                    @slot.PriceOverride.Value.ToString("N0") VNĐ
+                                                    <small class="ms-1">(Giá riêng)</small>
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted fst-italic">
+                                                    <i class="fa-solid fa-equals me-1"></i> Giá mặc định sân
+                                                </span>
+                                            }
+                                        </td>
+                                        <td class="text-end px-4">
+                                            <div class="btn-group shadow-sm">
+                                                <a asp-action="Edit" asp-route-id="@slot.Id" class="btn btn-outline-primary btn-sm">
+                                                    <i class="bi bi-pencil-square"></i> Sửa
+                                                </a>
+                                                <button type="button" class="btn btn-outline-danger btn-sm"
+                                                        data-bs-toggle="modal" data-bs-target="#deleteModal-@slot.Id">
+                                                    <i class="bi bi-trash-fill"></i> Xóa
+                                                </button>
+                                            </div>
+
+                                            @* Modal Xác nhận xóa *@
+                                            <div class="modal fade" id="deleteModal-@slot.Id" tabindex="-1" aria-hidden="true">
+                                                <div class="modal-dialog modal-dialog-centered">
+                                                    <div class="modal-content border-0 shadow-lg">
+                                                        <div class="modal-header bg-danger text-white">
+                                                            <h5 class="modal-title fw-bold">
+                                                                <i class="bi bi-exclamation-triangle-fill"></i> Xác nhận xóa
+                                                            </h5>
+                                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <div class="modal-body py-4 text-start">
+                                                            Bạn có chắc chắn muốn xóa khung giờ
+                                                            <strong class="text-danger">
+                                                                @slot.StartTime.ToString("HH:mm") – @slot.EndTime.ToString("HH:mm")
+                                                            </strong>
+                                                            của sân <strong>@pitch.Name</strong> không?
+                                                        </div>
+                                                        <div class="modal-footer bg-light border-0">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                                            <form asp-action="Delete" asp-route-id="@slot.Id" method="post" class="d-inline">
+                                                                <button type="submit" class="btn btn-danger px-4">
+                                                                    <i class="bi bi-trash-fill me-1"></i> Đồng Ý Xóa
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    slotIndex++;
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>

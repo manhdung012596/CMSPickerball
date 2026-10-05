@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +11,7 @@ namespace SoccerPitchMvc.Controllers;
 /// Controller quản lý Lịch đặt sân bóng (Bookings).
 /// Chứa logic đặt sân, kiểm tra trùng lịch, tính tiền tự động, quản lý giao dịch (Transaction) và hiển thị ma trận lịch biểu.
 /// </summary>
+[Authorize(Roles = "Admin,Staff")]
 public class BookingsController : Controller
 {
     private readonly ApplicationDbContext _context;
@@ -136,7 +138,7 @@ public class BookingsController : Controller
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UpdateStatus(int id, int status)
+    public async Task<IActionResult> UpdateStatus(int id, int status, string? returnUrl = null)
     {
         var booking = await _context.Bookings.FindAsync(id);
         if (booking == null)
@@ -148,7 +150,106 @@ public class BookingsController : Controller
         _context.Update(booking);
         await _context.SaveChangesAsync();
 
+        TempData["Success"] = status switch
+        {
+            1 => "Đã xác nhận đặt sân thành công!",
+            2 => "Đã xác nhận thanh toán thành công!",
+            3 => "Đã hủy đặt sân.",
+            _ => "Cập nhật trạng thái thành công!"
+        };
+
+        if (!string.IsNullOrEmpty(returnUrl))
+            return LocalRedirect(returnUrl);
+
         return RedirectToAction(nameof(Index));
+    }
+
+    /// <summary>
+    /// GET: /Bookings/Confirm
+    /// Hiển thị danh sách đặt sân đang chờ xác nhận (Status = 0).
+    /// Cho phép nhân viên xác nhận hoặc hủy nhanh từng lượt.
+    /// </summary>
+    public async Task<IActionResult> Confirm(string? search, DateOnly? date)
+    {
+        ViewBag.Search = search;
+        ViewBag.Date = date?.ToString("yyyy-MM-dd");
+
+        var query = _context.Bookings
+            .Include(b => b.Customer)
+            .Include(b => b.Pitch)
+            .Include(b => b.TimeSlot)
+            .Where(b => b.Status == 0) // Chờ xác nhận
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            string s = search.Trim().ToLower();
+            query = query.Where(b =>
+                b.Customer.FullName.ToLower().Contains(s) ||
+                b.Customer.PhoneNumber.Contains(s) ||
+                b.Pitch.Name.ToLower().Contains(s));
+        }
+
+        if (date.HasValue)
+            query = query.Where(b => b.BookingDate == date.Value);
+
+        var bookings = await query
+            .OrderBy(b => b.BookingDate)
+            .ThenBy(b => b.TimeSlot.StartTime)
+            .ToListAsync();
+
+        ViewBag.PendingCount = bookings.Count;
+        return View(bookings);
+    }
+
+    /// <summary>
+    /// GET: /Bookings/History
+    /// Hiển thị lịch sử đặt sân: Đã thanh toán (Status=2) và Đã hủy (Status=3).
+    /// Có filter theo khoảng ngày, khách hàng, trạng thái.
+    /// </summary>
+    public async Task<IActionResult> History(string? search, DateOnly? from, DateOnly? to, int? status)
+    {
+        ViewBag.Search = search;
+        ViewBag.From = from?.ToString("yyyy-MM-dd");
+        ViewBag.To = to?.ToString("yyyy-MM-dd");
+        ViewBag.StatusFilter = status;
+
+        var query = _context.Bookings
+            .Include(b => b.Customer)
+            .Include(b => b.Pitch)
+            .Include(b => b.TimeSlot)
+            .Where(b => b.Status == 2 || b.Status == 3) // Đã thanh toán hoặc đã hủy
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            string s = search.Trim().ToLower();
+            query = query.Where(b =>
+                b.Customer.FullName.ToLower().Contains(s) ||
+                b.Customer.PhoneNumber.Contains(s) ||
+                b.Pitch.Name.ToLower().Contains(s));
+        }
+
+        if (from.HasValue)
+            query = query.Where(b => b.BookingDate >= from.Value);
+
+        if (to.HasValue)
+            query = query.Where(b => b.BookingDate <= to.Value);
+
+        if (status.HasValue && (status == 2 || status == 3))
+            query = query.Where(b => b.Status == status.Value);
+
+        var bookings = await query
+            .OrderByDescending(b => b.BookingDate)
+            .ThenByDescending(b => b.CreatedAt)
+            .ToListAsync();
+
+        // Thống kê nhanh
+        ViewBag.TotalPaid = bookings.Count(b => b.Status == 2);
+        ViewBag.TotalCancelled = bookings.Count(b => b.Status == 3);
+        ViewBag.TotalRevenue = bookings.Where(b => b.Status == 2).Sum(b => b.TotalPrice);
+
+        return View(bookings);
     }
 
     /// <summary>

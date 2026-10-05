@@ -1,0 +1,115 @@
+@model SoccerPitchMvc.Models.CreateServicePriceDto
+
+@{
+    ViewData["Title"] = "Thêm Dịch Vụ Mới";
+    var serviceTypeNames = ViewBag.ServiceTypeNames as Dictionary<int, string>
+        ?? new Dictionary<int, string>();
+}
+
+<div class="container mt-2" style="max-width: 680px;">
+    <div class="d-flex align-items-center gap-3 mb-4 pb-2 border-bottom">
+        <a asp-action="Index" asp-route-serviceType="@Model.ServiceType" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h2 class="fw-bold text-dark mb-0">
+                <i class="fa-solid fa-plus-circle text-primary"></i> Thêm Dịch Vụ Mới
+            </h2>
+            <p class="text-muted mb-0 small">Thêm dịch vụ và bảng giá vào hệ thống</p>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-body p-4">
+            <form asp-action="Create" method="post">
+                <div asp-validation-summary="All" class="alert alert-danger rounded-3 small"></div>
+
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label asp-for="ServiceName" class="form-label fw-semibold">
+                            <i class="fa-solid fa-bell-concierge text-primary me-1"></i> Tên Dịch Vụ <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="ServiceName" class="form-control form-control-lg" placeholder="VD: Thuê vợt Yonex cao cấp" />
+                        <span asp-validation-for="ServiceName" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="ServiceType" class="form-label fw-semibold">
+                            <i class="fa-solid fa-tags text-primary me-1"></i> Loại Dịch Vụ <span class="text-danger">*</span>
+                        </label>
+                        <select asp-for="ServiceType" class="form-select">
+                            @foreach (var kv in serviceTypeNames)
+                            {
+                                <option value="@kv.Key">@kv.Value</option>
+                            }
+                        </select>
+                        <span asp-validation-for="ServiceType" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="Status" class="form-label fw-semibold">
+                            <i class="fa-solid fa-toggle-on text-primary me-1"></i> Trạng Thái
+                        </label>
+                        <select asp-for="Status" class="form-select">
+                            <option value="1">Hoạt động (hiển thị)</option>
+                            <option value="0">Ẩn</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-7">
+                        <label asp-for="Price" class="form-label fw-semibold">
+                            <i class="fa-solid fa-money-bill-wave text-primary me-1"></i> Đơn Giá (VNĐ) <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="Price" class="form-control" type="number" min="0" step="1000" placeholder="50000" />
+                        <span asp-validation-for="Price" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-5">
+                        <label asp-for="PriceUnit" class="form-label fw-semibold">
+                            <i class="fa-solid fa-ruler text-primary me-1"></i> Đơn Vị Tính
+                        </label>
+                        <input asp-for="PriceUnit" class="form-control" placeholder="lần / giờ / buổi / bộ" />
+                        <span asp-validation-for="PriceUnit" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-8">
+                        <label asp-for="Description" class="form-label fw-semibold">
+                            <i class="fa-solid fa-align-left text-primary me-1"></i> Mô Tả
+                            <span class="text-muted fw-normal">(tùy chọn)</span>
+                        </label>
+                        <textarea asp-for="Description" class="form-control" rows="2" placeholder="Mô tả ngắn về dịch vụ..."></textarea>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="SortOrder" class="form-label fw-semibold">
+                            <i class="fa-solid fa-sort text-primary me-1"></i> Thứ Tự Sắp Xếp
+                        </label>
+                        <input asp-for="SortOrder" class="form-control" type="number" min="0" />
+                        <div class="form-text">Số nhỏ hơn hiển thị trước</div>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="Note" class="form-label fw-semibold">
+                            <i class="fa-solid fa-note-sticky text-primary me-1"></i> Ghi Chú Nội Bộ
+                            <span class="text-muted fw-normal">(tùy chọn)</span>
+                        </label>
+                        <input asp-for="Note" class="form-control" placeholder="Ghi chú dành cho nhân viên..." />
+                    </div>
+                </div>
+
+                <div class="d-flex gap-3 justify-content-end pt-4 border-top mt-3">
+                    <a asp-action="Index" asp-route-serviceType="@Model.ServiceType" class="btn btn-outline-secondary px-4">
+                        <i class="bi bi-x-lg me-1"></i> Hủy
+                    </a>
+                    <button type="submit" class="btn btn-primary btn-lg px-5 shadow-sm">
+                        <i class="bi bi-check-lg me-1"></i> Thêm Dịch Vụ
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

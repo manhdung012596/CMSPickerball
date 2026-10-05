@@ -165,7 +165,10 @@
                                     }
                                 </td>
                                 <td class="text-center">
-                                    <span class="badge bg-@promo.TypeBadge bg-opacity-15 text-@promo.TypeBadge border border-@promo.TypeBadge border-opacity-25">
+                                    <span class="badge border" 
+                                          style="background-color: @(promo.IsCoupon ? "rgba(13, 202, 240, 0.1)" : "rgba(255, 193, 7, 0.1)"); 
+                                                 color: @(promo.IsCoupon ? "#055160" : "#664d03"); 
+                                                 border-color: @(promo.IsCoupon ? "rgba(13, 202, 240, 0.25)" : "rgba(255, 193, 7, 0.25)") !important;">
                                         <i class="fas fa-@(promo.IsCoupon ? "ticket-simple" : "gift") me-1"></i>@promo.TypeLabel
                                     </span>
                                 </td>

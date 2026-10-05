@@ -613,6 +613,12 @@
                     <a href="#booking-history" class="dash-nav-link">
                         <i class="fa-regular fa-calendar-check"></i> Lịch sử đặt sân
                     </a>
+                    <a href="#purchase-history" class="dash-nav-link">
+                        <i class="fa-solid fa-cart-shopping"></i> Lịch sử mua hàng
+                    </a>
+                    <a href="#rental-history" class="dash-nav-link">
+                        <i class="fa-solid fa-clock-rotate-left"></i> Lịch sử thuê dịch vụ
+                    </a>
                     <a href="#my-vouchers" class="dash-nav-link">
                         <i class="fa-solid fa-ticket-simple"></i> Kho ưu đãi của tôi
                     </a>
@@ -707,6 +713,104 @@
                                     <td>15:00 - 16:30</td>
                                     <td class="text-danger fw-bold">180,000đ</td>
                                     <td><span class="badge-status cancelled"><i class="fa-solid fa-circle-xmark"></i> Đã hủy</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Section: Purchase History -->
+                <div id="purchase-history" class="dashboard-content-card">
+                    <h3 class="card-header-title">Lịch Sử Mua Hàng</h3>
+                    <div class="table-responsive mt-3">
+                        <table class="table table-custom">
+                            <thead>
+                                <tr>
+                                    <th>Mã đơn hàng</th>
+                                    <th>Sản phẩm / Vật dụng</th>
+                                    <th>Ngày mua</th>
+                                    <th>Số lượng</th>
+                                    <th>Tổng tiền</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="fw-bold">#OD-5502</td>
+                                    <td>Vợt Pickleball Wilson Juice + Nước điện giải</td>
+                                    <td>18/06/2026</td>
+                                    <td>1 vợt, 2 chai</td>
+                                    <td class="text-success fw-bold">1,850,000đ</td>
+                                    <td><span class="badge-status paid"><i class="fa-solid fa-circle-check"></i> Đã thanh toán</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">#OD-5481</td>
+                                    <td>Bóng Pickleball Franklin X-40 (Hộp 3 quả)</td>
+                                    <td>15/06/2026</td>
+                                    <td>1 hộp</td>
+                                    <td class="text-success fw-bold">210,000đ</td>
+                                    <td><span class="badge-status paid"><i class="fa-solid fa-circle-check"></i> Đã thanh toán</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">#OD-5310</td>
+                                    <td>Băng cổ tay thể thao Elite + Nước suối</td>
+                                    <td>05/06/2026</td>
+                                    <td>2 băng, 1 chai</td>
+                                    <td class="text-success fw-bold">150,000đ</td>
+                                    <td><span class="badge-status paid"><i class="fa-solid fa-circle-check"></i> Đã thanh toán</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Section: Rental History -->
+                <div id="rental-history" class="dashboard-content-card">
+                    <h3 class="card-header-title">Lịch Sử Thuê Dịch Vụ</h3>
+                    <div class="table-responsive mt-3">
+                        <table class="table table-custom">
+                            <thead>
+                                <tr>
+                                    <th>Mã giao dịch</th>
+                                    <th>Dịch vụ / Thiết bị</th>
+                                    <th>Ngày thuê</th>
+                                    <th>Số lượng / Thời gian</th>
+                                    <th>Tổng chi phí</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="fw-bold">#RT-4102</td>
+                                    <td>Thuê vợt Carbon Fiber (Premium)</td>
+                                    <td>18/06/2026</td>
+                                    <td>2 chiếc (1.5 giờ)</td>
+                                    <td class="text-success fw-bold">60,000đ</td>
+                                    <td><span class="badge-status paid"><i class="fa-solid fa-circle-check"></i> Đã trả vợt</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">#RT-3985</td>
+                                    <td>Thuê bóng Pickleball tiêu chuẩn</td>
+                                    <td>15/06/2026</td>
+                                    <td>5 quả (1.5 giờ)</td>
+                                    <td class="text-success fw-bold">20,000đ</td>
+                                    <td><span class="badge-status paid"><i class="fa-solid fa-circle-check"></i> Đã trả bóng</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">#RT-3850</td>
+                                    <td>Huấn luyện viên cá nhân (Coach Quốc Tế)</td>
+                                    <td>12/06/2026</td>
+                                    <td>1 buổi (1 giờ)</td>
+                                    <td class="text-success fw-bold">500,000đ</td>
+                                    <td><span class="badge-status paid"><i class="fa-solid fa-circle-check"></i> Hoàn thành</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">#RT-3610</td>
+                                    <td>Đăng ký giải đấu Elite Summer Cup 2026</td>
+                                    <td>01/06/2026</td>
+                                    <td>Hạng mục đôi nam nữ</td>
+                                    <td class="text-success fw-bold">300,000đ</td>
+                                    <td><span class="badge-status paid"><i class="fa-solid fa-circle-check"></i> Đã xác nhận</span></td>
                                 </tr>
                             </tbody>
                         </table>

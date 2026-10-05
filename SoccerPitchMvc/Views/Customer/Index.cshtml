@@ -1,0 +1,192 @@
+@model IEnumerable<SoccerPitchMvc.Models.Customer>
+
+@{
+    ViewData["Title"] = "Danh Sách Khách Hàng";
+    var bookingCounts = ViewBag.BookingCounts as Dictionary<int, int> ?? new Dictionary<int, int>();
+}
+
+<div class="container-fluid mt-2">
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 rounded-3 mb-3" role="alert">
+            <i class="fa-solid fa-circle-check me-2"></i> @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 rounded-3 mb-3" role="alert">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i> @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @* Header *@
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">
+                <i class="fa-solid fa-user-group text-success"></i> Quản Lý Khách Hàng
+            </h2>
+            <p class="text-muted mb-0">Danh sách khách hàng đã sử dụng dịch vụ đặt sân</p>
+        </div>
+        <a asp-action="Create" class="btn btn-success btn-lg shadow-sm">
+            <i class="bi bi-person-plus-fill me-1"></i> Thêm Khách Hàng
+        </a>
+    </div>
+
+    @* Tìm kiếm *@
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-body py-3">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label fw-semibold small text-muted mb-1">
+                        <i class="fa-solid fa-search me-1"></i> Tìm kiếm
+                    </label>
+                    <input type="text" name="search" value="@ViewBag.Search" class="form-control"
+                           placeholder="Tên khách hàng, số điện thoại, địa chỉ..." />
+                </div>
+                <div class="col-auto d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i> Tìm
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i> Xóa lọc
+                    </a>
+                </div>
+                <div class="col ms-auto text-end">
+                    <span class="badge bg-secondary fs-6">
+                        <i class="fa-solid fa-users me-1"></i> @Model.Count() khách hàng
+                    </span>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @* Bảng danh sách *@
+    <div class="card border-0 shadow-sm rounded-3">
+        @if (!Model.Any())
+        {
+            <div class="card-body text-center py-5">
+                <i class="fa-solid fa-user-slash display-3 text-secondary mb-3 d-block"></i>
+                <h5 class="text-muted">Không tìm thấy khách hàng nào</h5>
+                <p class="text-muted small">Thử thay đổi từ khóa tìm kiếm hoặc thêm khách hàng mới.</p>
+                <a asp-action="Create" class="btn btn-success mt-2">
+                    <i class="bi bi-person-plus-fill me-1"></i> Thêm Khách Hàng Mới
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th class="py-3 px-4" style="width:50px;">#</th>
+                                <th class="py-3">Họ và Tên</th>
+                                <th class="py-3">Số Điện Thoại</th>
+                                <th class="py-3">Địa Chỉ</th>
+                                <th class="py-3 text-center">Số Lần Đặt Sân</th>
+                                <th class="py-3 text-end px-4">Hành Động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{ int idx = 1; }
+                            @foreach (var item in Model)
+                            {
+                                int count = bookingCounts.ContainsKey(item.Id) ? bookingCounts[item.Id] : 0;
+                                <tr>
+                                    <td class="px-4 text-muted fw-semibold">@idx</td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
+                                                 style="width:40px;height:40px;min-width:40px;">
+                                                <span class="fw-bold text-success">@item.FullName[0].ToString().ToUpper()</span>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold text-dark">@item.FullName</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <a href="tel:@item.PhoneNumber" class="text-decoration-none text-dark">
+                                            <i class="fa-solid fa-phone text-success me-1"></i>@item.PhoneNumber
+                                        </a>
+                                    </td>
+                                    <td class="text-muted">
+                                        @(string.IsNullOrEmpty(item.Address) ? "—" : item.Address)
+                                    </td>
+                                    <td class="text-center">
+                                        @if (count > 0)
+                                        {
+                                            <a asp-action="History" asp-route-id="@item.Id"
+                                               class="badge bg-primary text-decoration-none px-3 py-2 fs-6">
+                                                @count lần
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary px-3 py-2">Chưa đặt</span>
+                                        }
+                                    </td>
+                                    <td class="text-end px-4">
+                                        <div class="btn-group shadow-sm">
+                                            <a asp-action="History" asp-route-id="@item.Id"
+                                               class="btn btn-outline-info btn-sm" title="Xem lịch sử">
+                                                <i class="fa-solid fa-history"></i>
+                                            </a>
+                                            <a asp-action="Edit" asp-route-id="@item.Id"
+                                               class="btn btn-outline-primary btn-sm">
+                                                <i class="bi bi-pencil-square"></i> Sửa
+                                            </a>
+                                            <button type="button" class="btn btn-outline-danger btn-sm"
+                                                    data-bs-toggle="modal" data-bs-target="#deleteModal-@item.Id">
+                                                <i class="bi bi-trash-fill"></i>
+                                            </button>
+                                        </div>
+
+                                        @* Modal xóa *@
+                                        <div class="modal fade" id="deleteModal-@item.Id" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog modal-dialog-centered">
+                                                <div class="modal-content border-0 shadow-lg">
+                                                    <div class="modal-header bg-danger text-white">
+                                                        <h5 class="modal-title fw-bold">
+                                                            <i class="bi bi-exclamation-triangle-fill me-1"></i> Xác nhận xóa
+                                                        </h5>
+                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body py-4 text-start">
+                                                        Bạn có chắc chắn muốn xóa khách hàng
+                                                        <strong class="text-danger">@item.FullName</strong>
+                                                        (@item.PhoneNumber) không?
+                                                        @if (count > 0)
+                                                        {
+                                                            <div class="alert alert-warning mt-3 mb-0 py-2 small">
+                                                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                                                Khách hàng này có <strong>@count lượt đặt sân</strong>. Chỉ xóa được nếu không còn lượt đặt đang chờ xử lý.
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                    <div class="modal-footer bg-light border-0">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                                        <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline">
+                                                            <button type="submit" class="btn btn-danger px-4">
+                                                                <i class="bi bi-trash-fill me-1"></i> Đồng Ý Xóa
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                idx++;
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    </div>
+</div>

@@ -27,20 +27,22 @@
                 <!-- 1. Quản lý Sân Pickleball -->
                 @{
                     var isPitchesActive = ViewContext.RouteData.Values["controller"]?.ToString() == "Pitches";
+                    var isTimeSlotsActive = ViewContext.RouteData.Values["controller"]?.ToString() == "TimeSlots";
+                    var isPitchGroupActive = isPitchesActive || isTimeSlotsActive;
                 }
-                <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(isPitchesActive ? "active" : "")" 
-                   data-bs-toggle="collapse" href="#pitchesCollapse" role="button" aria-expanded="@(isPitchesActive ? "true" : "false")" aria-controls="pitchesCollapse">
+                <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(isPitchGroupActive ? "active" : "")" 
+                   data-bs-toggle="collapse" href="#pitchesCollapse" role="button" aria-expanded="@(isPitchGroupActive ? "true" : "false")" aria-controls="pitchesCollapse">
                     <span><i class="fa-solid fa-table-tennis-paddle-ball text-success"></i> Quản lý sân Pickleball <span class="text-warning"></span></span>
                     <i class="bi bi-chevron-down small toggle-icon"></i>
                 </a>
-                <div class="collapse @(isPitchesActive ? "show" : "")" id="pitchesCollapse">
+                <div class="collapse @(isPitchGroupActive ? "show" : "")" id="pitchesCollapse">
                     <a asp-controller="Pitches" asp-action="Index" class="collapse-menu-item @(isPitchesActive && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">
                         <i class="fa-solid fa-list-ul"></i> Danh sách sân
                     </a>
                     <a asp-controller="Pitches" asp-action="Create" class="collapse-menu-item @(isPitchesActive && ViewContext.RouteData.Values["action"]?.ToString() == "Create" ? "active" : "")">
                         <i class="fa-solid fa-plus"></i> Thêm sân mới
                     </a>
-                    <a href="#" class="collapse-menu-item">
+                    <a asp-controller="TimeSlots" asp-action="Index" class="collapse-menu-item @(isTimeSlotsActive ? "active" : "")">
                         <i class="fa-solid fa-clock"></i> Quản lý khung giờ
                     </a>
                 </div>
@@ -48,68 +50,86 @@
                 <!-- 2. Quản lý đặt sân -->
                 @{
                     var isBookingsActive = ViewContext.RouteData.Values["controller"]?.ToString() == "Bookings";
+                    var bookingsAction = ViewContext.RouteData.Values["action"]?.ToString();
                 }
                 <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(isBookingsActive ? "active" : "")" 
                    data-bs-toggle="collapse" href="#bookingsCollapse" role="button" aria-expanded="@(isBookingsActive ? "true" : "false")" aria-controls="bookingsCollapse">
-                    <span><i class="fa-regular fa-calendar-check"></i> Quản lý đặt sân <span class="text-warning">★</span></span>
+                    <span><i class="fa-regular fa-calendar-check"></i> Quản lý đặt sân <span class="text-warning"></span></span>
                     <i class="bi bi-chevron-down small toggle-icon"></i>
                 </a>
                 <div class="collapse @(isBookingsActive ? "show" : "")" id="bookingsCollapse">
-                    <a asp-controller="Bookings" asp-action="Calendar" class="collapse-menu-item @(isBookingsActive && ViewContext.RouteData.Values["action"]?.ToString() == "Calendar" ? "active" : "")">
+                    <a asp-controller="Bookings" asp-action="Calendar" class="collapse-menu-item @(isBookingsActive && bookingsAction == "Calendar" ? "active" : "")">
                         <i class="fa-regular fa-calendar"></i> Lịch đặt sân (Calendar)
                     </a>
-                    <a asp-controller="Bookings" asp-action="Index" class="collapse-menu-item @(isBookingsActive && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">
+                    <a asp-controller="Bookings" asp-action="Index" class="collapse-menu-item @(isBookingsActive && bookingsAction == "Index" ? "active" : "")">
                         <i class="fa-solid fa-list-check"></i> Danh sách đặt sân
                     </a>
-                    <a asp-controller="Bookings" asp-action="Create" class="collapse-menu-item @(isBookingsActive && ViewContext.RouteData.Values["action"]?.ToString() == "Create" ? "active" : "")">
+                    <a asp-controller="Bookings" asp-action="Create" class="collapse-menu-item @(isBookingsActive && bookingsAction == "Create" ? "active" : "")">
                         <i class="fa-solid fa-calendar-plus"></i> Đặt sân mới
                     </a>
-                    <a href="#" class="collapse-menu-item">
+                    <a asp-controller="Bookings" asp-action="Confirm" class="collapse-menu-item @(isBookingsActive && bookingsAction == "Confirm" ? "active" : "")">
                         <i class="fa-solid fa-circle-check"></i> Xác nhận đặt sân
                     </a>
-                    <a href="#" class="collapse-menu-item">
+                    <a asp-controller="Bookings" asp-action="History" class="collapse-menu-item @(isBookingsActive && bookingsAction == "History" ? "active" : "")">
                         <i class="fa-solid fa-history"></i> Lịch sử đặt sân
                     </a>
                 </div>
 
-                <!-- 3. Quản lý bài viết -->
-                <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" 
-                   data-bs-toggle="collapse" href="#articlesCollapse" role="button" aria-expanded="false" aria-controls="articlesCollapse">
-                    <span><i class="fa-regular fa-newspaper"></i> Quản lý bài viết</span>
-                    <i class="bi bi-chevron-down small toggle-icon"></i>
-                </a>
-                <div class="collapse" id="articlesCollapse">
-                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-list"></i> Danh sách bài viết</a>
-                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-file-circle-plus"></i> Thêm bài viết mới</a>
-                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-folder-tree"></i> Danh mục bài viết</a>
-                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-comments"></i> Bình luận</a>
-                </div>
 
                 <!-- 4. Quản lý khách hàng -->
-                <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" 
-                   data-bs-toggle="collapse" href="#customersCollapse" role="button" aria-expanded="false" aria-controls="customersCollapse">
+                @{
+                    var isCustomerActive = ViewContext.RouteData.Values["controller"]?.ToString() == "Customer";
+                    var customerAction = ViewContext.RouteData.Values["action"]?.ToString();
+                }
+                <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(isCustomerActive ? "active" : "")"
+                   data-bs-toggle="collapse" href="#customersCollapse" role="button" aria-expanded="@(isCustomerActive ? "true" : "false")" aria-controls="customersCollapse">
                     <span><i class="fa-solid fa-user-group"></i> Quản lý khách hàng</span>
                     <i class="bi bi-chevron-down small toggle-icon"></i>
                 </a>
-                <div class="collapse" id="customersCollapse">
-                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-users"></i> Danh sách khách hàng</a>
-                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-user-plus"></i> Thêm khách hàng mới</a>
-                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-award"></i> Nhóm khách hàng</a>
-                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-history"></i> Lịch sử đặt sân</a>
+                <div class="collapse @(isCustomerActive ? "show" : "")" id="customersCollapse">
+                    <a asp-controller="Customer" asp-action="Index" class="collapse-menu-item @(isCustomerActive && customerAction == "Index" ? "active" : "")">
+                        <i class="fa-solid fa-users"></i> Danh sách khách hàng
+                    </a>
+                    <a asp-controller="Customer" asp-action="Create" class="collapse-menu-item @(isCustomerActive && customerAction == "Create" ? "active" : "")">
+                        <i class="fa-solid fa-user-plus"></i> Thêm khách hàng mới
+                    </a>
+                    <a asp-controller="Bookings" asp-action="History" class="collapse-menu-item">
+                        <i class="fa-solid fa-history"></i> Lịch sử đặt sân
+                    </a>
                 </div>
 
                 <!-- 5. Quản lý dịch vụ -->
-                <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" 
-                   data-bs-toggle="collapse" href="#servicesCollapse" role="button" aria-expanded="false" aria-controls="servicesCollapse">
+                @{
+                    var isServiceActive = ViewContext.RouteData.Values["controller"]?.ToString() == "ServicePrices";
+                    var serviceAction = ViewContext.RouteData.Values["action"]?.ToString();
+                    var serviceTypeParam = Context.Request.Query["serviceType"].ToString();
+                }
+                <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(isServiceActive ? "active" : "")"
+                   data-bs-toggle="collapse" href="#servicesCollapse" role="button" aria-expanded="@(isServiceActive ? "true" : "false")" aria-controls="servicesCollapse">
                     <span><i class="fa-solid fa-bell-concierge"></i> Quản lý dịch vụ</span>
                     <i class="bi bi-chevron-down small toggle-icon"></i>
                 </a>
-                <div class="collapse" id="servicesCollapse">
-                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-table-tennis-paddle-ball"></i> Dịch vụ thuê sân</a>
-                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-hockey-puck"></i> Cho thuê vợt</a>
-                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-circle"></i> Cho thuê bóng</a>
-                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-graduation-cap"></i> Dịch vụ huấn luyện</a>
-                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-trophy"></i> Tổ chức giải đấu</a>
+                <div class="collapse @(isServiceActive ? "show" : "")" id="servicesCollapse">
+                    <a asp-controller="ServicePrices" asp-action="Index" asp-route-serviceType="0"
+                       class="collapse-menu-item @(isServiceActive && serviceTypeParam == "0" ? "active" : "")">
+                        <i class="fa-solid fa-table-tennis-paddle-ball"></i> Dịch vụ thuê sân
+                    </a>
+                    <a asp-controller="ServicePrices" asp-action="Index" asp-route-serviceType="1"
+                       class="collapse-menu-item @(isServiceActive && serviceTypeParam == "1" ? "active" : "")">
+                        <i class="fa-solid fa-table-tennis-paddle-ball"></i> Cho thuê vợt
+                    </a>
+                    <a asp-controller="ServicePrices" asp-action="Index" asp-route-serviceType="2"
+                       class="collapse-menu-item @(isServiceActive && serviceTypeParam == "2" ? "active" : "")">
+                        <i class="fa-solid fa-circle"></i> Cho thuê bóng
+                    </a>
+                    <a asp-controller="ServicePrices" asp-action="Index" asp-route-serviceType="3"
+                       class="collapse-menu-item @(isServiceActive && serviceTypeParam == "3" ? "active" : "")">
+                        <i class="fa-solid fa-graduation-cap"></i> Dịch vụ huấn luyện
+                    </a>
+                    <a asp-controller="ServicePrices" asp-action="Index" asp-route-serviceType="4"
+                       class="collapse-menu-item @(isServiceActive && serviceTypeParam == "4" ? "active" : "")">
+                        <i class="fa-solid fa-trophy"></i> Tổ chức giải đấu
+                    </a>
                 </div>
 
                 <!-- 6. Quản lý mua hàng -->
@@ -127,56 +147,34 @@
                 </div>
 
                 <!-- 7. Sổ quỹ -->
-                <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" 
-                   data-bs-toggle="collapse" href="#fundCollapse" role="button" aria-expanded="false" aria-controls="fundCollapse">
+                @{
+                    var isCashActive = ViewContext.RouteData.Values["controller"]?.ToString() == "CashTransactions";
+                    var cashAction = ViewContext.RouteData.Values["action"]?.ToString();
+                }
+                <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(isCashActive ? "active" : "")"
+                   data-bs-toggle="collapse" href="#fundCollapse" role="button" aria-expanded="@(isCashActive ? "true" : "false")" aria-controls="fundCollapse">
                     <span><i class="fa-solid fa-wallet"></i> Sổ quỹ</span>
                     <i class="bi bi-chevron-down small toggle-icon"></i>
                 </a>
-                <div class="collapse" id="fundCollapse">
-                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-money-bill-wave"></i> Thu tiền sân</a>
-                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-file-invoice-dollar"></i> Chi phí vận hành</a>
-                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-chart-pie"></i> Báo cáo thu chi</a>
-                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-scale-balanced"></i> Đối soát</a>
+                <div class="collapse @(isCashActive ? "show" : "")" id="fundCollapse">
+                    <a asp-controller="CashTransactions" asp-action="Income"
+                       class="collapse-menu-item @(isCashActive && cashAction == "Income" ? "active" : "")">
+                        <i class="fa-solid fa-money-bill-wave"></i> Thu tiền sân
+                    </a>
+                    <a asp-controller="CashTransactions" asp-action="Expense"
+                       class="collapse-menu-item @(isCashActive && cashAction == "Expense" ? "active" : "")">
+                        <i class="fa-solid fa-file-invoice-dollar"></i> Chi phí vận hành
+                    </a>
+                    <a asp-controller="CashTransactions" asp-action="Report"
+                       class="collapse-menu-item @(isCashActive && cashAction == "Report" ? "active" : "")">
+                        <i class="fa-solid fa-chart-pie"></i> Báo cáo thu chi
+                    </a>
+                    <a asp-controller="CashTransactions" asp-action="Reconcile"
+                       class="collapse-menu-item @(isCashActive && cashAction == "Reconcile" ? "active" : "")">
+                        <i class="fa-solid fa-scale-balanced"></i> Đối soát
+                    </a>
                 </div>
 
-                <!-- 8. Quản lý Masterdata -->
-                <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" 
-                   data-bs-toggle="collapse" href="#masterdataCollapse" role="button" aria-expanded="false" aria-controls="masterdataCollapse">
-                    <span><i class="fa-solid fa-database"></i> Quản lý Masterdata</span>
-                    <i class="bi bi-chevron-down small toggle-icon"></i>
-                </a>
-                <div class="collapse" id="masterdataCollapse">
-                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-clock"></i> Khung giờ mặc định</a>
-                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-hand-holding-dollar"></i> Giá dịch vụ</a>
-                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-tags"></i> Danh mục sản phẩm</a>
-                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-weight-scale"></i> Đơn vị tính</a>
-                </div>
-
-                <!-- 9. Khuyến mại -->
-                <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" 
-                   data-bs-toggle="collapse" href="#promoCollapse" role="button" aria-expanded="false" aria-controls="promoCollapse">
-                    <span><i class="fa-solid fa-tag"></i> Khuyến mại</span>
-                    <i class="bi bi-chevron-down small toggle-icon"></i>
-                </a>
-                <div class="collapse" id="promoCollapse">
-                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-rectangle-ad"></i> Danh sách khuyến mại</a>
-                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-circle-plus"></i> Thêm khuyến mại mới</a>
-                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-ticket-simple"></i> Mã giảm giá</a>
-                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-gift"></i> Chương trình ưu đãi</a>
-                </div>
-
-                <!-- 10. Cấu hình website -->
-                <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" 
-                   data-bs-toggle="collapse" href="#websiteCollapse" role="button" aria-expanded="false" aria-controls="websiteCollapse">
-                    <span><i class="fa-solid fa-gears"></i> Cấu hình website</span>
-                    <i class="bi bi-chevron-down small toggle-icon"></i>
-                </a>
-                <div class="collapse" id="websiteCollapse">
-                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-info-circle"></i> Thông tin chung</a>
-                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-images"></i> Logo & Banner</a>
-                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-address-book"></i> Liên hệ</a>
-                    <a href="#" class="collapse-menu-item"><i class="fa-solid fa-window-restore"></i> Cài đặt hiển thị</a>
-                </div>
 
                 <!-- 11. Hệ Thống (Ngôn ngữ) -->
                 @{
@@ -220,9 +218,108 @@
                             {
                                 <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Quản lý sân Pickleball</li>
                             }
+                            else if (ViewContext.RouteData.Values["controller"]?.ToString() == "TimeSlots")
+                            {
+                                <li class="breadcrumb-item"><a asp-controller="Pitches" asp-action="Index" class="text-decoration-none text-muted">Quản lý sân Pickleball</a></li>
+                                <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Quản lý Khung Giờ</li>
+                            }
                             else if (ViewContext.RouteData.Values["controller"]?.ToString() == "Bookings")
                             {
-                                <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Đặt Sân</li>
+                                <li class="breadcrumb-item"><a asp-controller="Bookings" asp-action="Index" class="text-decoration-none text-muted">Đặt Sân</a></li>
+                                @if (ViewContext.RouteData.Values["action"]?.ToString() == "Confirm")
+                                {
+                                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Xác Nhận Đặt Sân</li>
+                                }
+                                else if (ViewContext.RouteData.Values["action"]?.ToString() == "History")
+                                {
+                                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Lịch Sử Đặt Sân</li>
+                                }
+                                else if (ViewContext.RouteData.Values["action"]?.ToString() == "Calendar")
+                                {
+                                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Lịch Biểu</li>
+                                }
+                                else if (ViewContext.RouteData.Values["action"]?.ToString() == "Create")
+                                {
+                                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Đặt Sân Mới</li>
+                                }
+                                else
+                                {
+                                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Danh Sách Đặt Sân</li>
+                                }
+                            }
+                            else if (ViewContext.RouteData.Values["controller"]?.ToString() == "Customer")
+                            {
+                                <li class="breadcrumb-item"><a asp-controller="Customer" asp-action="Index" class="text-decoration-none text-muted">Quản lý khách hàng</a></li>
+                                @if (ViewContext.RouteData.Values["action"]?.ToString() == "Create")
+                                {
+                                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Thêm Khách Hàng Mới</li>
+                                }
+                                else if (ViewContext.RouteData.Values["action"]?.ToString() == "Edit")
+                                {
+                                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Chỉnh Sửa Khách Hàng</li>
+                                }
+                                else if (ViewContext.RouteData.Values["action"]?.ToString() == "History")
+                                {
+                                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Lịch Sử Đặt Sân</li>
+                                }
+                                else
+                                {
+                                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Danh Sách Khách Hàng</li>
+                                }
+                            }
+                            else if (ViewContext.RouteData.Values["controller"]?.ToString() == "ServicePrices")
+                            {
+                                <li class="breadcrumb-item"><a asp-controller="ServicePrices" asp-action="Index" class="text-decoration-none text-muted">Quản lý dịch vụ</a></li>
+                                @if (ViewContext.RouteData.Values["action"]?.ToString() == "Create")
+                                {
+                                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Thêm Dịch Vụ</li>
+                                }
+                                else if (ViewContext.RouteData.Values["action"]?.ToString() == "Edit")
+                                {
+                                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Chỉnh Sửa Dịch Vụ</li>
+                                }
+                                else
+                                {
+                                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">
+                                        @(Context.Request.Query["serviceType"].ToString() switch
+                                        {
+                                            "0" => "Dịch Vụ Thuê Sân",
+                                            "1" => "Cho Thuê Vợt",
+                                            "2" => "Cho Thuê Bóng",
+                                            "3" => "Dịch Vụ Huấn Luyện",
+                                            "4" => "Tổ Chức Giải Đấu",
+                                            _ => "Tất Cả Dịch Vụ"
+                                        })
+                                    </li>
+                                }
+                            }
+                            else if (ViewContext.RouteData.Values["controller"]?.ToString() == "CashTransactions")
+                            {
+                                <li class="breadcrumb-item"><a asp-controller="CashTransactions" asp-action="Income" class="text-decoration-none text-muted">Sổ Quỹ</a></li>
+                                @if (ViewContext.RouteData.Values["action"]?.ToString() == "Income")
+                                {
+                                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Thu Tiền Sân</li>
+                                }
+                                else if (ViewContext.RouteData.Values["action"]?.ToString() == "Expense")
+                                {
+                                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Chi Phí Vận Hành</li>
+                                }
+                                else if (ViewContext.RouteData.Values["action"]?.ToString() == "Report")
+                                {
+                                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Báo Cáo Thu Chi</li>
+                                }
+                                else if (ViewContext.RouteData.Values["action"]?.ToString() == "Reconcile")
+                                {
+                                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Đối Soát</li>
+                                }
+                                else if (ViewContext.RouteData.Values["action"]?.ToString() == "Create")
+                                {
+                                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Lập Phiếu</li>
+                                }
+                                else
+                                {
+                                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Sổ Quỹ</li>
+                                }
                             }
                             else
                             {
@@ -263,16 +360,6 @@
                         </ul>
                     </div>
 
-                    <!-- Language Switcher -->
-                    <div class="dropdown">
-                        <button class="btn btn-light btn-sm dropdown-toggle border" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-translate"></i> VI
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end shadow border-0">
-                            <li><a class="dropdown-item" href="#"><span class="fw-bold">VI</span> - Tiếng Việt</a></li>
-                            <li><a class="dropdown-item" href="#"><span class="fw-bold">EN</span> - English</a></li>
-                        </ul>
-                    </div>
 
                     <!-- User Avatar -->
                     <div class="dropdown">
@@ -280,11 +367,11 @@
                             <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&h=80&q=80" alt="avatar" class="rounded-circle border" width="36" height="36" />
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-2">
-                            <li><div class="px-3 py-1 fw-bold text-dark">Admin User</div></li>
-                            <li><div class="px-3 pb-2 text-muted small">admin@pickleball.com</div></li>
+                            <li><div class="px-3 py-1 fw-bold text-dark">@(User.Identity?.Name ?? "Admin User")</div></li>
+                            <li><div class="px-3 pb-2 text-muted small">Vai trò: @(User.IsInRole("Admin") ? "Admin" : "Nhân viên")</div></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-person"></i> Hồ sơ</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-box-arrow-right"></i> Đăng xuất</a></li>
+                            <li><a class="dropdown-item" href="/Account/Profile"><i class="bi bi-person"></i> Hồ sơ</a></li>
+                            <li><a class="dropdown-item" href="/Account/Logout"><i class="bi bi-box-arrow-right"></i> Đăng xuất</a></li>
                         </ul>
                     </div>
                 </div>

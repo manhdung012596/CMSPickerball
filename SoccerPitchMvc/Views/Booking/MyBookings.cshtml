@@ -1,0 +1,348 @@
+@model IEnumerable<SoccerPitchMvc.Models.Booking>
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = "Lịch sử đặt sân";
+}
+
+@section Styles {
+<style>
+    .bookings-section {
+        padding: 60px 0;
+        background-color: var(--light-bg);
+        min-height: 70vh;
+    }
+    .bookings-header-banner {
+        background-color: var(--dark-slate);
+        color: #ffffff;
+        padding: 40px 0;
+        border-bottom: 2px solid rgba(132, 204, 22, 0.1);
+        text-align: center;
+        margin-bottom: 40px;
+    }
+    .bookings-title {
+        font-size: 32px;
+        font-weight: 800;
+        font-family: 'Outfit', sans-serif;
+    }
+    .bookings-card {
+        background: #ffffff;
+        border-radius: 20px;
+        border: 1px solid var(--border-color);
+        box-shadow: var(--card-shadow);
+        padding: 30px;
+        margin-bottom: 30px;
+    }
+    .bookings-card-title {
+        font-size: 20px;
+        font-weight: 700;
+        font-family: 'Outfit', sans-serif;
+        color: var(--dark-slate);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .bookings-card-title i {
+        color: var(--lime-green);
+    }
+    .table-custom {
+        vertical-align: middle;
+    }
+    .table-custom th {
+        font-family: 'Outfit', sans-serif;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 12px;
+        letter-spacing: 0.5px;
+        color: #475569;
+        background-color: #f1f5f9;
+        border: none;
+        padding: 15px 10px;
+    }
+    .table-custom td {
+        padding: 15px 10px;
+        border-bottom: 1px solid var(--border-color);
+        color: #334155;
+        font-weight: 500;
+    }
+    .badge-status {
+        font-size: 12px;
+        font-weight: 700;
+        padding: 6px 12px;
+        border-radius: 50px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .badge-status-pending { background-color: rgba(245, 158, 11, 0.12); color: #b45309; }
+    .badge-status-confirmed { background-color: rgba(59, 130, 246, 0.12); color: #1d4ed8; }
+    .badge-status-paid { background-color: rgba(16, 185, 129, 0.12); color: #047857; }
+    .badge-status-cancelled { background-color: rgba(239, 68, 68, 0.12); color: #b91c1c; }
+    
+    .btn-detail-custom {
+        color: var(--dark-slate);
+        border: 1px solid var(--border-color);
+        background-color: #ffffff;
+        font-weight: 600;
+        font-size: 13px;
+        padding: 6px 14px;
+        border-radius: 8px;
+        transition: var(--transition-smooth);
+        text-decoration: none;
+    }
+    .btn-detail-custom:hover {
+        background-color: var(--lime-green);
+        border-color: var(--lime-green);
+        color: #ffffff;
+    }
+    
+    .btn-cancel-custom {
+        color: #b91c1c;
+        background-color: rgba(239, 68, 68, 0.05);
+        border: 1px solid rgba(239, 68, 68, 0.15);
+        font-weight: 600;
+        font-size: 13px;
+        padding: 6px 14px;
+        border-radius: 8px;
+        transition: var(--transition-smooth);
+        cursor: pointer;
+    }
+    .btn-cancel-custom:hover {
+        background-color: #b91c1c;
+        color: #ffffff;
+        border-color: #b91c1c;
+    }
+    
+    /* Modal premium styling */
+    .modal-content-custom {
+        border-radius: 20px;
+        border: none;
+        overflow: hidden;
+    }
+    .modal-header-custom {
+        background-color: var(--dark-slate);
+        color: #ffffff;
+        padding: 20px 25px;
+        border-bottom: 3px solid var(--lime-green);
+    }
+    .modal-title-custom {
+        font-family: 'Outfit', sans-serif;
+        font-weight: 800;
+        font-size: 20px;
+    }
+    .modal-body-custom {
+        padding: 25px;
+    }
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px dashed var(--border-color);
+    }
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+    .detail-lbl {
+        font-weight: 600;
+        color: #64748b;
+    }
+    .detail-val {
+        font-weight: 700;
+        color: var(--dark-slate);
+    }
+</style>
+}
+
+<div class="bookings-header-banner">
+    <div class="container">
+        <h1 class="bookings-title">Lịch Sử Đặt Sân</h1>
+        <p class="text-muted mb-0">Theo dõi thông tin và trạng thái các lượt đặt sân Pickleball của bạn</p>
+    </div>
+</div>
+
+<div class="bookings-section">
+    <div class="container">
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success rounded-3 mb-4 alert-dismissible fade show" role="alert">
+                <i class="fa-solid fa-circle-check me-2"></i> @TempData["Success"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger rounded-3 mb-4 alert-dismissible fade show" role="alert">
+                <i class="fa-solid fa-triangle-exclamation me-2"></i> @TempData["Error"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <div class="bookings-card">
+            <h2 class="bookings-card-title"><i class="fa-solid fa-clipboard-list"></i> Danh sách đặt sân</h2>
+            
+            <div class="table-responsive">
+                <table class="table table-custom w-100">
+                    <thead>
+                        <tr>
+                            <th>Mã đặt sân</th>
+                            <th>Sân Pickleball</th>
+                            <th>Ngày chơi</th>
+                            <th>Khung giờ</th>
+                            <th>Tổng tiền</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    <i class="fa-regular fa-folder-open display-4 d-block mb-3 text-secondary"></i>
+                                    Bạn chưa thực hiện lượt đặt sân nào. 
+                                    <a href="/Home/Booking" class="text-success fw-bold d-block mt-2">Đặt sân ngay!</a>
+                                </td>
+                            </tr>
+                        }
+                        @foreach (var booking in Model)
+                        {
+                            <tr>
+                                <td class="fw-bold">#PKB-@booking.Id</td>
+                                <td class="fw-bold">@booking.Pitch.Name</td>
+                                <td>@booking.BookingDate.ToString("dd/MM/yyyy")</td>
+                                <td>@booking.TimeSlot.StartTime.ToString("HH:mm") - @booking.TimeSlot.EndTime.ToString("HH:mm")</td>
+                                <td class="fw-bold text-success">@booking.TotalPrice.ToString("N0") VNĐ</td>
+                                <td>
+                                    @switch (booking.Status)
+                                    {
+                                        case 0:
+                                            <span class="badge-status badge-status-pending"><i class="fa-regular fa-clock"></i> Chờ xác nhận</span>
+                                            break;
+                                        case 1:
+                                            <span class="badge-status badge-status-confirmed"><i class="fa-solid fa-square-check"></i> Đã xác nhận</span>
+                                            break;
+                                        case 2:
+                                            <span class="badge-status badge-status-paid"><i class="fa-solid fa-circle-check"></i> Đã thanh toán</span>
+                                            break;
+                                        case 3:
+                                            <span class="badge-status badge-status-cancelled"><i class="fa-solid fa-circle-xmark"></i> Đã hủy</span>
+                                            break;
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <button onclick="showDetails(@booking.Id)" class="btn-detail-custom"><i class="fa-solid fa-eye me-1"></i> Chi tiết</button>
+                                        @if (booking.Status == 0)
+                                        {
+                                            <form asp-action="Cancel" asp-route-id="@booking.Id" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn hủy lượt đặt sân này không?')">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn-cancel-custom"><i class="fa-solid fa-trash me-1"></i> Hủy</button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Chi tiết -->
+<div class="modal fade" id="bookingDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-content-custom">
+            <div class="modal-header modal-header-custom">
+                <h5 class="modal-title modal-title-custom"><i class="fa-solid fa-circle-info me-2 text-success"></i>Chi Tiết Đặt Sân</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body modal-body-custom" id="modalDetailsBody">
+                <div class="text-center py-4">
+                    <i class="fa-solid fa-spinner fa-spin fs-2 text-success"></i>
+                    <p class="text-muted mt-2">Đang tải chi tiết...</p>
+                </div>
+            </div>
+            <div class="modal-footer border-0 bg-light">
+                <button type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    async function showDetails(id) {
+        const modal = new bootstrap.Modal(document.getElementById('bookingDetailModal'));
+        modal.show();
+        
+        const body = document.getElementById('modalDetailsBody');
+        body.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fa-solid fa-spinner fa-spin fs-2 text-success"></i>
+                <p class="text-muted mt-2">Đang tải chi tiết...</p>
+            </div>
+        `;
+        
+        try {
+            const res = await fetch(`/Booking/Details/${id}`);
+            if (!res.ok) throw new Error('Không thể tải chi tiết');
+            const data = await res.json();
+            
+            body.innerHTML = `
+                <div class="detail-row">
+                    <span class="detail-lbl">Mã đặt sân:</span>
+                    <span class="detail-val">#PKB-${data.id}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-lbl">Sân bãi:</span>
+                    <span class="detail-val">${data.courtName} (${data.courtType})</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-lbl">Ngày chơi:</span>
+                    <span class="detail-val">${data.bookingDate}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-lbl">Khung giờ:</span>
+                    <span class="detail-val">${data.timeSlot}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-lbl">Tổng thanh toán:</span>
+                    <span class="detail-val text-success">${data.totalPrice}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-lbl">Ngày tạo đặt sân:</span>
+                    <span class="detail-val">${data.createdAt}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-lbl">Trạng thái:</span>
+                    <span class="detail-val">${getStatusBadge(data.status, data.statusLabel)}</span>
+                </div>
+                <div class="detail-row flex-column align-items-start border-bottom-0 mt-2">
+                    <span class="detail-lbl mb-2">Ghi chú từ khách hàng:</span>
+                    <div class="p-3 bg-light rounded-3 w-100 border text-muted" style="white-space: pre-wrap; font-size:13px;">${data.note}</div>
+                </div>
+            `;
+        } catch (err) {
+            body.innerHTML = `
+                <div class="alert alert-danger rounded-3 m-0">
+                    <i class="fa-solid fa-circle-exclamation me-2"></i> Lỗi khi tải dữ liệu chi tiết đặt sân. Vui lòng thử lại!
+                </div>
+            `;
+        }
+    }
+    
+    function getStatusBadge(status, label) {
+        let cls = '';
+        let icon = '';
+        switch(status) {
+            case 0: cls = 'badge-status-pending'; icon = 'fa-regular fa-clock'; break;
+            case 1: cls = 'badge-status-confirmed'; icon = 'fa-solid fa-square-check'; break;
+            case 2: cls = 'badge-status-paid'; icon = 'fa-solid fa-circle-check'; break;
+            case 3: cls = 'badge-status-cancelled'; icon = 'fa-solid fa-circle-xmark'; break;
+        }
+        return `<span class="badge-status ${cls}"><i class="${icon}"></i> ${label}</span>`;
+    }
+</script>
+}

@@ -1,0 +1,211 @@
+@model SoccerPitchMvc.Models.ProfileViewModel
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = "Trang cá nhân";
+}
+
+@section Styles {
+<style>
+    .profile-section {
+        padding: 60px 0;
+        background-color: var(--light-bg);
+    }
+    .profile-header-banner {
+        background-color: var(--dark-slate);
+        color: #ffffff;
+        padding: 40px 0;
+        border-bottom: 2px solid rgba(132, 204, 22, 0.1);
+        text-align: center;
+        margin-bottom: 40px;
+    }
+    .profile-title {
+        font-size: 32px;
+        font-weight: 800;
+        font-family: 'Outfit', sans-serif;
+    }
+    .profile-card {
+        background: #ffffff;
+        border-radius: 20px;
+        border: 1px solid var(--border-color);
+        box-shadow: var(--card-shadow);
+        padding: 30px;
+        margin-bottom: 30px;
+        transition: var(--transition-smooth);
+    }
+    .profile-card-title {
+        font-size: 20px;
+        font-weight: 700;
+        font-family: 'Outfit', sans-serif;
+        color: var(--dark-slate);
+        margin-bottom: 25px;
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .profile-card-title i {
+        color: var(--lime-green);
+    }
+    .form-group-custom {
+        margin-bottom: 20px;
+    }
+    .form-label-custom {
+        font-size: 13px;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 6px;
+        display: block;
+    }
+    .form-control-custom {
+        background-color: #f8fafc;
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        color: var(--dark-slate);
+        font-size: 14px;
+        padding: 12px 16px;
+        font-weight: 500;
+        transition: var(--transition-smooth);
+    }
+    .form-control-custom:focus {
+        background-color: #ffffff;
+        border-color: var(--lime-green);
+        box-shadow: 0 0 0 4px rgba(132, 204, 22, 0.15);
+        outline: none;
+    }
+    .form-control-custom:disabled {
+        background-color: #e2e8f0;
+        color: #64748b;
+        cursor: not-allowed;
+        border-color: #cbd5e1;
+    }
+    .btn-profile-submit {
+        background: linear-gradient(135deg, var(--lime-green) 0%, #76b813 100%);
+        color: #ffffff;
+        font-weight: 700;
+        padding: 12px 25px;
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 4px 15px rgba(132, 204, 22, 0.2);
+        transition: var(--transition-smooth);
+        cursor: pointer;
+        display: inline-block;
+        font-family: 'Outfit', sans-serif;
+    }
+    .btn-profile-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(132, 204, 22, 0.3);
+        background: var(--dark-slate);
+        color: #ffffff;
+    }
+    .alert-custom {
+        border-radius: 12px;
+        padding: 15px 20px;
+        margin-bottom: 25px;
+        font-size: 14px;
+    }
+</style>
+}
+
+<div class="profile-header-banner">
+    <div class="container">
+        <h1 class="profile-title">Tài Khoản Của Tôi</h1>
+        <p class="text-muted mb-0">Quản lý thông tin cá nhân và mật khẩu tài khoản</p>
+    </div>
+</div>
+
+<div class="profile-section">
+    <div class="container">
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success alert-custom alert-dismissible fade show" role="alert">
+                <i class="fa-solid fa-circle-check me-2"></i> @TempData["Success"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (TempData["PasswordError"] != null)
+        {
+            <div class="alert alert-danger alert-custom alert-dismissible fade show" role="alert">
+                <i class="fa-solid fa-triangle-exclamation me-2"></i> @TempData["PasswordError"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <div class="row g-4">
+            <!-- Left Column: Update Info -->
+            <div class="col-lg-6">
+                <div class="profile-card">
+                    <h2 class="profile-card-title">
+                        <i class="fa-regular fa-address-card"></i> Thông tin cá nhân
+                    </h2>
+                    <form asp-action="Profile" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="form-group-custom">
+                            <label class="form-label-custom">Địa chỉ Email (Tên đăng nhập)</label>
+                            <input asp-for="Email" class="form-control form-control-custom w-100" readonly />
+                            <span class="text-muted small" style="font-size: 11px;">Địa chỉ email dùng để đăng nhập và không thể thay đổi.</span>
+                        </div>
+
+                        <div class="form-group-custom">
+                            <label asp-for="FullName" class="form-label-custom">Họ và tên *</label>
+                            <input asp-for="FullName" class="form-control form-control-custom w-100" placeholder="Nhập họ và tên..." />
+                            <span asp-validation-for="FullName" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group-custom">
+                            <label asp-for="PhoneNumber" class="form-label-custom">Số điện thoại *</label>
+                            <input asp-for="PhoneNumber" type="tel" class="form-control form-control-custom w-100" placeholder="Nhập số điện thoại..." />
+                            <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group-custom">
+                            <label asp-for="Address" class="form-label-custom">Địa chỉ</label>
+                            <input asp-for="Address" class="form-control form-control-custom w-100" placeholder="Nhập địa chỉ nhà, quận, thành phố..." />
+                            <span asp-validation-for="Address" class="text-danger"></span>
+                        </div>
+
+                        <button type="submit" class="btn-profile-submit">
+                            <i class="fa-regular fa-floppy-disk me-2"></i>Lưu thay đổi
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Right Column: Change Password -->
+            <div class="col-lg-6">
+                <div class="profile-card">
+                    <h2 class="profile-card-title">
+                        <i class="fa-solid fa-key"></i> Thay đổi mật khẩu
+                    </h2>
+                    <form asp-action="ChangePassword" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="form-group-custom">
+                            <label class="form-label-custom">Mật khẩu hiện tại *</label>
+                            <input name="OldPassword" type="password" class="form-control form-control-custom w-100" required placeholder="Nhập mật khẩu đang sử dụng..." />
+                        </div>
+
+                        <div class="form-group-custom">
+                            <label class="form-label-custom">Mật khẩu mới *</label>
+                            <input name="NewPassword" type="password" class="form-control form-control-custom w-100" required placeholder="Tối thiểu 6 ký tự..." />
+                        </div>
+
+                        <div class="form-group-custom">
+                            <label class="form-label-custom">Xác nhận mật khẩu mới *</label>
+                            <input name="ConfirmNewPassword" type="password" class="form-control form-control-custom w-100" required placeholder="Nhập lại mật khẩu mới..." />
+                        </div>
+
+                        <button type="submit" class="btn-profile-submit">
+                            <i class="fa-solid fa-rotate me-2"></i>Cập nhật mật khẩu
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+}
